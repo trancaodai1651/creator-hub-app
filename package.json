@@ -61,7 +61,7 @@
     "appId": "com.tcd.creatorhub",
     "productName": "Creator Hub",
     "asar": true,
-    "asarUnpacked": [
+    "asarUnpack": [
       "node_modules/ffmpeg-static/**/*",
       "node_modules/ffprobe-static/**/*"
     ],
@@ -74,6 +74,22 @@
         "owner": "trancaodai1651",
         "repo": "creator-hub-app"
       }
-    ]
+    ],
+    "win": {
+      "target": [
+        "nsis"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": "always"
+    },
+    "mac": {
+      "target": [
+        "dmg"
+      ],
+      "category": "public.app-category.video"
+    }
   }
 }
