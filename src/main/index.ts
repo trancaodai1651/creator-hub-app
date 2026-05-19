@@ -69,6 +69,7 @@ function formatSRTTime(secs: number): string {
   return `${h}:${m}:${s},${ms}`
 }
 
+// Chuyển đổi định dạng thời gian cho VTT/ASS phụ đề
 function formatVTTTime(secs: number): string {
   const h = Math.floor(secs / 3600).toString().padStart(2, '0')
   const m = Math.floor((secs % 3600) / 60).toString().padStart(2, '0')
@@ -245,7 +246,7 @@ app.whenReady().then(() => {
         if (duration > 0) videoData.push({ path: vPath, duration })
       }
 
-      if (await checkPauseAndCancel("Đang tính toán sắp xếp thuật toán phân tập phim...", 100)) return { success: false, message: "Đã hủy bỏ!" }
+      if (await checkPauseAndCancel("Đang tính toán sắp xếp kịch bản...", 100)) return { success: false, message: "Đã hủy bỏ!" }
       event.sender.send('join-progress', { message: `Giai đoạn 2/3: Đang ngẫu nhiên hóa kịch bản phim (Shuffle)...`, percent: 100 })
 
       let pillars = requirePillar ? videoData.filter(v => v.duration > 600) : []
@@ -315,12 +316,14 @@ app.whenReady().then(() => {
             else if (encoderId === 'h264_videotoolbox') { outputOpts.push('-b:v 6000k') }
             ff.outputOptions(outputOpts)
           } else { ff.outputOptions('-c copy') }
+          
+          // [VÁ LỖI]: Bọc rỗng hàm resolve để tương thích chuẩn kiểu dữ liệu End Listener
           ff.save(outputPath).on('error', reject).on('end', () => { if (fs.existsSync(txtPath)) fs.unlinkSync(txtPath); resolve() })
         })
 
         try { await runFfmpegEngine(finalEncoder) } 
         catch (err: any) {
-          if (finalEncoder !== 'libx264') { console.log(`Lỗi GPU Engine, đang chuyển sang CPU...`); await runFfmpegEngine('libx264') } 
+          if (finalEncoder !== 'libx264') { console.log(`Lỗi GPU, chuyển sang CPU...`); await runFfmpegEngine('libx264') } 
           else { throw err }
         }
       }
@@ -370,7 +373,12 @@ app.whenReady().then(() => {
         } 
         else if (isAudioTarget) { ff.noVideo(); if (targetExt === 'mp3') ff.outputOptions(['-c:a libmp3lame', '-b:a 192k']); if (targetExt === 'm4a') ff.outputOptions(['-c:a aac', '-b:a 192k']) } 
         else if (isImageTarget) { ff.outputOptions('-vframes 1') }
-        ff.save(outputPath).on('progress', (p) => { const pct = p.percent ? Math.round(p.percent) : 0; event.sender.send('convert-progress', { message: `Đang xử lý chuẩn hóa định dạng: ${pct}%`, percent: pct }) }).on('error', reject).on('end', resolve)
+        
+        // [VÁ LỖI CHÍ MẠNG 373]: Bọc rỗng hàm resolve() để không bị xung đột tham số (stdout, stderr) của kiểu end listener gốc
+        ff.save(outputPath)
+          .on('progress', (p) => { const pct = p.percent ? Math.round(p.percent) : 0; event.sender.send('convert-progress', { message: `Đang xử lý chuẩn hóa định dạng: ${pct}%`, percent: pct }) })
+          .on('error', reject)
+          .on('end', () => resolve())
       })
 
       try { await runEncodingEngine(videoEncoder); return { success: true, message: `Chuyển đổi tập tin thành công!` } } 
@@ -478,13 +486,9 @@ app.whenReady().then(() => {
     return new Promise((resolve) => { exec(`winget search "${query.replace(/"/g, '')}"`, { encoding: 'utf-8' }, (err, stdout) => { if (err || !stdout) { resolve([]); return; }; const lines = stdout.split(/\r?\n/); const results: { id: string; name: string; icon: string }[] = []; for (let line of lines) { const trimmed = line.trim(); if (!trimmed || trimmed.startsWith('Name') || trimmed.startsWith('---') || trimmed.includes('…')) continue; const parts = trimmed.split(/\s{2,}/); if (parts.length >= 2) { if (parts[0].toLowerCase().includes('no package found') || parts[0].toLowerCase().includes('không tìm thấy')) continue; results.push({ name: parts[0], id: parts[1], icon: '📦' }) } }; resolve(results.slice(0, 12)) }) })
   })
 
-  // ====================================================================
-  // [FORCE REINSTALL] ÉP MAC VÀ WINDOWS CÀI ĐÈ APP NẾU BỊ LỖI CACHE
-  // ====================================================================
   ipcMain.handle('install-selected-apps', async (event, { appIds }) => {
     if (!appIds || appIds.length === 0) return { success: false, message: "No apps selected" }
     
-    // --- Lệnh cài đè (Reinstall) trên macOS để trị lỗi ảo ---
     if (process.platform === 'darwin') {
       const brewPath = getMacBrewPath(); if (!brewPath) { return { success: false, message: "Không tìm thấy Homebrew trên máy Mac của bạn." } }
       const totalApps = appIds.length
@@ -495,9 +499,7 @@ app.whenReady().then(() => {
         const appId = appIds[i]; let stagePercent = 20
         await new Promise<void>((resolve) => {
           event.sender.send('install-apps-progress', { appIndex: i + 1, totalApps, appName: appId, stage: 'Đang kết nối Homebrew Cloud...', stagePercent, globalPercent: Math.round((i / totalApps) * 100) })
-          
-          // Dùng reinstall thay cho install
-          const child = spawn(brewPath, ['reinstall', '--cask', appId], { stdio: ['ignore', 'pipe', 'pipe'], env: { ...process.env, HOMEBREW_NO_AUTO_UPDATE: '1' } })
+          const child = spawn(brewPath, ['install', '--cask', appId], { stdio: ['ignore', 'pipe', 'pipe'], env: { ...process.env, HOMEBREW_NO_AUTO_UPDATE: '1' } })
           
           let errLog = ''
           child.stdout.on('data', (data) => { 
@@ -528,7 +530,6 @@ app.whenReady().then(() => {
       }
     }
 
-    // --- Lệnh ép cài đè (Force) trên Windows ---
     const totalApps = appIds.length
     let successCount = 0
     let lastError = ""
@@ -536,7 +537,6 @@ app.whenReady().then(() => {
     for (let i = 0; i < totalApps; i++) {
       const appId = appIds[i]; let currentStage = 'Khởi động'; let stagePercent = 0
       await new Promise<void>((resolve) => {
-        // Bổ sung cờ --force
         const child = spawn('winget', ['install', appId, '--silent', '--force', '--accept-source-agreements', '--accept-package-agreements', '--disable-interactivity'])
         
         let errLog = ''
