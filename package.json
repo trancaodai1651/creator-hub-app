@@ -77,10 +77,7 @@
     ],
     "win": {
       "target": [
-        {
-          "target": "nsis",
-          "arch": ["x64"]
-        }
+        "nsis"
       ]
     },
     "nsis": {
@@ -90,10 +87,7 @@
     },
     "mac": {
       "target": [
-        {
-          "target": "dmg",
-          "arch": ["universal"]
-        }
+        "dmg"
       ],
       "category": "public.app-category.video"
     }
