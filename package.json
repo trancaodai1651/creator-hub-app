@@ -87,7 +87,7 @@
     },
     "mac": {
       "target": [
-        "dmg"
+        "zip"
       ],
       "category": "public.app-category.video"
     }
