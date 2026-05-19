@@ -75,21 +75,7 @@
         "repo": "creator-hub-app"
       }
     ],
-    "win": {
-      "target": [
-        "nsis"
-      ]
-    },
-    "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true,
-      "createDesktopShortcut": "always"
-    },
-    "mac": {
-      "target": [
-        "dmg"
-      ],
-      "category": "public.app-category.video"
-    }
+    "win": {},
+    "mac": {}
   }
 }
