@@ -84,9 +84,8 @@
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
-      "createDesktopShortcut": true,
-      "createStartMenuShortcut": true,
-      "shortcutName": "Creator Hub"
+      "createDesktopShortcut": "always",
+      "createStartMenuShortcut": true
     },
     "mac": {
       "target": [
