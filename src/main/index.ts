@@ -9,6 +9,7 @@ import ffmpeg from 'fluent-ffmpeg'
 import ffmpegStatic from 'ffmpeg-static'
 import ffprobeStatic from 'ffprobe-static'
 import YTDlpWrap from 'yt-dlp-wrap'
+import { spawn, exec } from 'child_process' // <--- KÍCH HOẠT CẢ SPAWN VÀ EXEC ĐỂ ĐA NHIỆM
 
 // ====================================================================
 // KHU VUC CAU HINH DUONG DAN FFMPEG TUYET DOI
@@ -53,7 +54,7 @@ function createWindow(): void {
     minHeight: 750,
     show: false,
     autoHideMenuBar: true,
-    title: 'CREATOR HUB', // <--- THÊM DÒNG NÀY ĐỂ ĐỔI TÊN TIÊU ĐỀ WINDOW
+    title: 'CREATOR HUB',
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: { preload: join(__dirname, '../preload/index.js'), sandbox: false }
   })
@@ -76,7 +77,7 @@ app.whenReady().then(() => {
     return null
   })
 
-  ipcMain.handle('open-file-dialog', async (_event, allowedExtensions) => { // <-- Đã đổi thành _event
+  ipcMain.handle('open-file-dialog', async (_event, allowedExtensions) => {
     const { canceled, filePaths } = await dialog.showOpenDialog({
       title: 'Chon file can xu ly', filters: allowedExtensions ? [allowedExtensions] : [], properties: ['openFile']
     })
@@ -92,7 +93,7 @@ app.whenReady().then(() => {
     return null
   })
 
-  ipcMain.handle('scan-folder', async (_event, folderPath) => { // <-- Đã đổi thành _event
+  ipcMain.handle('scan-folder', async (_event, folderPath) => {
     if (!folderPath) return []
     try {
       const stat = fs.statSync(folderPath)
@@ -311,6 +312,102 @@ app.whenReady().then(() => {
         return { success: true, message: `Da tai hoan tat video.` }
       }
     } catch (error: any) { if (fs.existsSync(tempDir)) fs.rmSync(tempDir, { recursive: true, force: true }); return { success: false, message: error.message } }
+  })
+
+  // ====================================================================
+  // [SIÊU IPC MỚI KÍCH HOẠT] THUẬT TOÁN TRA CỨU APP CLOUD QUA WINGET
+  // ====================================================================
+  ipcMain.handle('search-apps', async (_event, { query }) => {
+    if (!query || query.trim() === '') return []
+    return new Promise((resolve) => {
+      // Gọi lệnh tìm kiếm bảo mật từ Microsoft Cloud Repository
+      exec(`winget search "${query.replace(/"/g, '')}"`, { encoding: 'utf-8' }, (err, stdout) => {
+        if (err || !stdout) { resolve([]); return; }
+        
+        const lines = stdout.split(/\r?\n/)
+        const results: { id: string; name: string; icon: string }[] = []
+        
+        for (let line of lines) {
+          const trimmed = line.trim()
+          // Bỏ qua dòng tiêu đề và các dòng phân cách gạch ngang
+          if (!trimmed || trimmed.startsWith('Name') || trimmed.startsWith('---') || trimmed.includes('…')) continue
+          
+          // Phân tách dữ liệu theo cột (cách nhau từ 2 khoảng trắng trở lên)
+          const parts = trimmed.split(/\s{2,}/)
+          if (parts.length >= 2) {
+            // Chặn các câu thông báo lỗi hệ thống từ Winget
+            if (parts[0].toLowerCase().includes('no package found') || parts[0].toLowerCase().includes('không tìm thấy')) continue
+            
+            results.push({
+              name: parts[0],
+              id: parts[1],
+              icon: '📦' // Đóng mác icon hộp đóng gói mặc định cho app tìm thấy
+            })
+          }
+        }
+        // Trả về tối đa 12 kết quả phù hợp nhất để tối ưu giao diện bento grid
+        resolve(results.slice(0, 12))
+      })
+    })
+  })
+
+  // ====================================================================
+  // TÁCH GIAI ĐOẠN CHI TIẾT & PHẦN TRĂM REALTIME CHO WINGET
+  // ====================================================================
+  ipcMain.handle('install-selected-apps', async (event, { appIds }) => {
+    if (!appIds || appIds.length === 0) return { success: false, message: "No apps selected" }
+    if (process.platform !== 'win32') return { success: false, message: "Tính năng này chỉ hỗ trợ trên Windows!" }
+
+    const totalApps = appIds.length
+
+    for (let i = 0; i < totalApps; i++) {
+      const appId = appIds[i]
+      let currentStage = 'Khởi động'
+      let stagePercent = 0
+
+      await new Promise<void>((resolve) => {
+        const child = spawn('winget', [
+          'install', appId, '--silent', '--accept-source-agreements', '--accept-package-agreements', '--disable-interactivity'
+        ])
+
+        child.stdout.on('data', (data) => {
+          const output = data.toString()
+          
+          if (output.includes('Download') || output.includes('Tải') || output.includes('download')) {
+            currentStage = 'Tải xuống'
+          } else if (output.includes('Install') || output.includes('Cài') || output.includes('install') || output.includes('hash')) {
+            currentStage = 'Cài đặt ngầm'
+          }
+
+          const match = output.match(/(\d+)%/)
+          if (match) {
+            stagePercent = parseInt(match[1], 10)
+          } else {
+            if (currentStage === 'Cài đặt ngầm' && stagePercent < 90) {
+              stagePercent += 5 
+            }
+          }
+
+          const globalPercent = Math.round(((i / totalApps) * 100) + (stagePercent / totalApps))
+
+          event.sender.send('install-apps-progress', { 
+            appIndex: i + 1,
+            totalApps: totalApps,
+            appName: appId,
+            stage: currentStage,
+            stagePercent: stagePercent,
+            globalPercent: globalPercent > 100 ? 100 : globalPercent
+          })
+        })
+
+        child.on('close', () => {
+          resolve()
+        })
+      })
+    }
+
+    event.sender.send('install-apps-progress', { message: 'Hoàn thành!', percent: 100 })
+    return { success: true, message: "Toàn bộ các phần mềm đã được cài đặt tự động hoàn toàn vào hệ thống của bạn." }
   })
 
   createWindow()

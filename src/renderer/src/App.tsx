@@ -2,15 +2,13 @@ import { useState, useEffect } from 'react'
 
 declare global { interface Window { electron: any; api: any } }
 
-// ====================================================================
-// [ĐÃ SỬA] ĐỊNH NGHĨA KIỂU DỮ LIỆU STRICT TYPE CHO BỘ TỪ ĐIỂN
-// ====================================================================
 const translations: Record<'vi' | 'en', Record<string, string>> = {
   vi: {
     dashboard: "Dashboard",
     videoJoiner: "Video Joiner",
     videoDownloader: "Video Downloader",
     fileConverter: "File Converter",
+    appInstaller: "Bộ cài phần mềm",
     settings: "Cài đặt",
     welcome: "Chào mừng trở lại!",
     createdBy: "Created by TCD",
@@ -28,8 +26,6 @@ const translations: Record<'vi' | 'en', Record<string, string>> = {
     btnCancel: "🛑 HỦY BỎ",
     btnPause: "⏸ TẠM DỪNG",
     btnResume: "▶ TIẾP TỤC",
-    
-    // Tab Joiner
     joinTitle: "Kéo thả hoặc Click chọn thư mục video",
     joinReady: "Đã tải {count} video sẵn sàng",
     joinEmpty: "Chưa có file nào",
@@ -46,8 +42,6 @@ const translations: Record<'vi' | 'en', Record<string, string>> = {
     posBottomLeft: "Góc Trái Dưới",
     posBottomRight: "Góc Phải Dưới",
     ratioOriginal: "Bản gốc",
-    
-    // Tab Downloader
     dlTitle: "📥 Trình Tải Video Đa Nền Tảng",
     dlSub: "Hỗ trợ tải video 4K chất lượng cao nhất và cắt đoạn theo phút yêu cầu.",
     dlLabelUrl: "Dán link video tại đây:",
@@ -56,8 +50,6 @@ const translations: Record<'vi' | 'en', Record<string, string>> = {
     dlLabelSave: "Thư mục lưu video tải về:",
     dlDefaultDir: "Mặc định (Thư mục Downloads)",
     dlBest: "Tốt nhất hiện có (Khuyên dùng)",
-    
-    // Tab Converter
     convTitle: "⚡ Trình Chuyển Đổi Định Dạng File",
     convSub: "Hỗ trợ Hình ảnh, Video, Âm thanh chất lượng gốc và chèn cứng phụ đề Sub (.srt, .ass).",
     convLabelFile: "Chọn File gốc cần đổi (Video/Ảnh/Audio):",
@@ -66,8 +58,10 @@ const translations: Record<'vi' | 'en', Record<string, string>> = {
     convLabelTarget: "Chuyển sang định dạng mục tiêu:",
     convLabelSave: "Thư mục xuất file kết quả:",
     convDefaultDir: "Mặc định (Lưu cùng thư mục file gốc)",
-    
-    // Tab Settings
+    insTitle: "🛠️ Trình Tự Động Cài Đặt Ứng Dụng Windows",
+    insSub: "Lựa chọn các phần mềm cần thiết, hệ thống sẽ tự động tải phiên bản mới nhất từ trang chủ và cài đặt ngầm hoàn toàn dưới nền.",
+    insBtn: "KÍCH HOẠT CÀI ĐẶT TỰ ĐỘNG",
+    insProcessing: "ĐANG TIẾN HÀNH CÀI ĐẶT NGẦM CÁC PHẦN MỀM...",
     setMainTitle: "⚙️ Cấu hình Hệ thống",
     setMainSub: "Thay đổi ngôn ngữ và tùy biến chủ đề hiển thị của phần mềm.",
     setLangLabel: "Ngôn ngữ ứng dụng (Language):",
@@ -85,6 +79,7 @@ const translations: Record<'vi' | 'en', Record<string, string>> = {
     videoJoiner: "Video Joiner",
     videoDownloader: "Video Downloader",
     fileConverter: "File Converter",
+    appInstaller: "App Installer",
     settings: "Settings",
     welcome: "Welcome Back!",
     createdBy: "Created by TCD",
@@ -102,8 +97,6 @@ const translations: Record<'vi' | 'en', Record<string, string>> = {
     btnCancel: "🛑 CANCEL",
     btnPause: "⏸ PAUSE",
     btnResume: "▶ RESUME",
-
-    // Tab Joiner
     joinTitle: "Drag & Drop or Click to select video folder",
     joinReady: "{count} videos loaded and ready",
     joinEmpty: "No files loaded",
@@ -120,8 +113,6 @@ const translations: Record<'vi' | 'en', Record<string, string>> = {
     posBottomLeft: "Bottom Left Corner",
     posBottomRight: "Bottom Right Corner",
     ratioOriginal: "Original",
-
-    // Tab Downloader
     dlTitle: "📥 Multi-Platform Video Downloader",
     dlSub: "Supports downloading 4K video streams and custom trimming intervals.",
     dlLabelUrl: "Paste video link here:",
@@ -130,8 +121,6 @@ const translations: Record<'vi' | 'en', Record<string, string>> = {
     dlLabelSave: "Download Output Directory:",
     dlDefaultDir: "Default (Downloads Folder)",
     dlBest: "Best Available (Recommended)",
-
-    // Tab Converter
     convTitle: "⚡ Multimedia File Converter",
     convSub: "Convert Images, Videos, Audio with original quality and hardcode subtitle files (.srt, .ass).",
     convLabelFile: "Select Source File (Video/Image/Audio):",
@@ -140,8 +129,10 @@ const translations: Record<'vi' | 'en', Record<string, string>> = {
     convLabelTarget: "Target Format Extension:",
     convLabelSave: "Output Destination Directory:",
     convDefaultDir: "Default (Save inside source file directory)",
-
-    // Tab Settings
+    insTitle: "🛠️ Automated Windows App Installer",
+    insSub: "Tick the essential apps you want. The pipeline will automatically fetch the latest releases and handle silent background installation.",
+    insBtn: "LAUNCH AUTOMATED INSTALLATION",
+    insProcessing: "INSTALLING PACKAGES SILENTLY...",
     setMainTitle: "⚙️ System Configurations",
     setMainSub: "Switch application language and customize theme color variations.",
     setLangLabel: "Application Language:",
@@ -156,6 +147,17 @@ const translations: Record<'vi' | 'en', Record<string, string>> = {
   }
 }
 
+const AVAILABLE_APPS = [
+  { id: 'Google.Chrome', name: 'Google Chrome', icon: '🌐' },
+  { id: 'Bytedance.CapCut', name: 'CapCut Editor', icon: '🎬' },
+  { id: 'OBSProject.OBSStudio', name: 'OBS Studio', icon: '🎥' },
+  { id: 'Microsoft.VisualStudioCode', name: 'VS Code', icon: '💻' },
+  { id: 'VideoLAN.VLC', name: 'VLC Player', icon: '🎵' },
+  { id: 'WinRAR.WinRAR', name: 'WinRAR', icon: '📦' },
+  { id: 'Discord.Discord', name: 'Discord', icon: '💬' },
+  { id: 'EpicGames.EpicGamesLauncher', name: 'Epic Games', icon: '🎮' }
+]
+
 function App() {
   const [activeTab, setActiveTab] = useState('home')
   const [videoList, setVideoList] = useState<string[]>([]) 
@@ -168,7 +170,6 @@ function App() {
   })
   const [isDark, setIsDark] = useState<boolean>(true)
 
-  // [ĐÃ SỬA VÁ LỖI ÉP KIỂU] Hàm dịch thuật an toàn tuyệt đối
   const t = (key: string, replaceData?: { [key: string]: any }) => {
     let str = translations[language][key] || key
     if (replaceData) {
@@ -199,10 +200,10 @@ function App() {
   const c_bgMain   = isDark ? 'bg-[#0f0f0f] text-white' : 'bg-[#f4f4f6] text-zinc-900'
   const c_bgPanel  = isDark ? 'bg-[#171717] border-[#262626]' : 'bg-white border-zinc-200 shadow-sm'
   const c_bgTab    = isDark ? 'bg-[#121212] border-[#222]' : 'bg-[#eaeaea] border-zinc-300'
-  const c_bgInput  = isDark ? 'bg-[#0a0a0a] border-[#333]' : 'bg-zinc-50 border-zinc-300'
+  const c_bgInput  = isDark ? 'bg-[#0a0a0a] border-[#333]' : 'bg-zinc-50 border-zinc-300 text-zinc-800'
   const c_textSub  = isDark ? 'text-gray-400' : 'text-zinc-500'
   const c_borderT  = isDark ? 'border-[#262626]' : 'border-zinc-200'
-  const c_btnSec   = isDark ? 'bg-[#262626] border-[#444] hover:bg-[#333]' : 'bg-zinc-100 border-zinc-300 hover:bg-zinc-200'
+  const c_btnSec   = isDark ? 'bg-[#262626] border-[#444] hover:bg-[#333]' : 'bg-zinc-100 border-zinc-300 hover:bg-zinc-200 shadow-sm'
 
   // State Tab Joiner
   const [minTime, setMinTime] = useState<number>(60)
@@ -232,6 +233,21 @@ function App() {
   const [convMsg, setConvMsg] = useState<string>('')
   const [convPercent, setConvertPercent] = useState<number>(0)
 
+  // State Tab App Installer
+  const [selectedApps, setSelectedApps] = useState<string[]>([])
+  const [isInstalling, setIsInstalling] = useState<boolean>(false)
+  const [installProgress, setInstallProgress] = useState<{
+    appIndex: number; totalApps: number; appName: string; stage: string; stagePercent: number; globalPercent: number;
+  }>({ appIndex: 0, totalApps: 0, appName: '', stage: '', stagePercent: 0, globalPercent: 0 })
+
+  // --- [BIẾN SIÊU NÂNG CẤP MỚI] ĐIỀU PHỐI TÌM APP ONLINE THỜI GIAN THỰC ---
+  const [searchQuery, setSearchQuery] = useState<string>('')
+  const [searchResults, setSearchResults] = useState<{ id: string; name: string; icon: string }[]>([])
+  const [isSearching, setIsSearching] = useState<boolean>(false)
+
+  // State Khung thông báo thương hiệu Modal
+  const [customModal, setCustomModal] = useState<{ show: boolean; title: string; message: string } | null>(null)
+
   // State Trạng thái Joiner
   const [isProcessing, setIsProcessing] = useState<boolean>(false)
   const [isPaused, setIsPaused] = useState<boolean>(false)
@@ -257,8 +273,8 @@ function App() {
       const response = await window.electron.ipcRenderer.invoke('start-joining', {
         videoPaths: videoList, minMins: Number(minTime), maxMins: Number(maxTime), requirePillar: requirePillar, outputDir: outputFolder, logoPath: logoPath, logoPosition: logoPosition, ratio: joinRatio
       });
-      alert(response.message);
-    } catch (error: any) { alert("Error: " + error.message); } finally {
+      setCustomModal({ show: true, title: "CREATOR HUB", message: response.message });
+    } catch (error: any) { setCustomModal({ show: true, title: "LỖI HỆ THỐNG", message: error.message }); } finally {
       setIsProcessing(false); setIsPaused(false); window.electron.ipcRenderer.removeAllListeners('join-progress');
     }
   };
@@ -280,8 +296,9 @@ function App() {
       const response = await window.electron.ipcRenderer.invoke('download-video', { 
         url: downloadUrl, saveDir: downloadFolder, resolution: dlResolution, startTime: dlStart, endTime: dlEnd
       });
-      alert(response.message); if (response.success) { setDownloadUrl(''); setDlStart(''); setDlEnd(''); } 
-    } catch (error: any) { alert("Error: " + error.message); } finally { setIsDownloading(false); window.electron.ipcRenderer.removeAllListeners('download-progress'); }
+      setCustomModal({ show: true, title: "CREATOR HUB", message: response.message });
+      if (response.success) { setDownloadUrl(''); setDlStart(''); setDlEnd(''); } 
+    } catch (error: any) { setCustomModal({ show: true, title: "LỖI HỆ THỐNG", message: error.message }); } finally { setIsDownloading(false); window.electron.ipcRenderer.removeAllListeners('download-progress'); }
   };
 
   const handleConvertFile = async () => {
@@ -290,8 +307,54 @@ function App() {
     window.electron.ipcRenderer.on('convert-progress', (_event, data) => { setConvMsg(data.message); setConvertPercent(data.percent); });
     try {
       const response = await window.electron.ipcRenderer.invoke('convert-file', { inputPath: convertFile, outputDir: convertFolder, targetExt: targetExtension, subPath: convertSub });
-      alert(response.message); if (response.success) { setConvertFile(''); setConvertSub(''); }
-    } catch (error: any) { alert("Error: " + error.message); } finally { setIsConverting(false); window.electron.ipcRenderer.removeAllListeners('convert-progress'); }
+      setCustomModal({ show: true, title: "CREATOR HUB", message: response.message });
+      if (response.success) { setConvertFile(''); setConvertSub(''); }
+    } catch (error: any) { setCustomModal({ show: true, title: "LỖI HỆ THỐNG", message: error.message }); } finally { setIsConverting(false); window.electron.ipcRenderer.removeAllListeners('convert-progress'); }
+  };
+
+  // --- HÀM TRA CỨU APP TRÊN MICROSOFT REPOSITORY ---
+  const handleSearchAppOnline = async () => {
+    if (!searchQuery.trim()) return
+    setIsSearching(true)
+    try {
+      const results = await window.electron.ipcRenderer.invoke('search-apps', { query: searchQuery })
+      setSearchResults(results)
+      if (results.length === 0) {
+        setCustomModal({ show: true, title: "KẾT QUẢ TÌM KIẾM", message: "Không tìm thấy phần mềm nào khớp với từ khóa trên thư viện Cloud." })
+      }
+    } catch (err: any) {
+      setCustomModal({ show: true, title: "LỖI KẾT NỐI MẠNG", message: err.message })
+    } finally {
+      setIsSearching(false)
+    }
+  }
+
+  const handleLaunchInstallation = async () => {
+    if (selectedApps.length === 0) { alert("Vui lòng chọn ít nhất 1 ứng dụng!"); return; }
+    setIsInstalling(true);
+    setInstallProgress({ appIndex: 1, totalApps: selectedApps.length, appName: '', stage: 'Khởi động', stagePercent: 0, globalPercent: 0 });
+    
+    window.electron.ipcRenderer.on('install-apps-progress', (_event, data) => {
+      if (data.message === 'Hoàn thành!') {
+        setInstallProgress(prev => ({ ...prev, globalPercent: 100, stagePercent: 100, stage: 'Hoàn thành' }));
+      } else { setInstallProgress(data); }
+    });
+
+    try {
+      const response = await window.electron.ipcRenderer.invoke('install-selected-apps', { appIds: selectedApps });
+      setCustomModal({ show: true, title: "CREATOR HUB - THÔNG BÁO", message: response.message });
+      if (response.success) { setSelectedApps([]); setSearchResults([]); setSearchQuery(''); }
+    } catch (error: any) { setCustomModal({ show: true, title: "LỖI THIẾT LẬP WINGET", message: error.message }); } finally {
+      setIsInstalling(false); window.electron.ipcRenderer.removeAllListeners('install-apps-progress');
+    }
+  };
+
+  const toggleAppSelection = (appId: string) => {
+    if (selectedApps.includes(appId)) {
+      setSelectedApps(selectedApps.filter(id => id !== appId));
+    } else {
+      setSelectedApps([...selectedApps, appId]);
+    }
   };
 
   const handleDrop = async (e: React.DragEvent) => {
@@ -306,19 +369,20 @@ function App() {
   return (
     <div className={`flex h-screen overflow-hidden font-sans transition-colors duration-200 ${c_bgMain}`}>
       {/* SIDEBAR */}
-      <aside className={`w-64 flex flex-col p-6 shrink-0 border-r transition-colors ${c_bgPanel}`}>
+      <aside className={`w-64 bg-[#171717] border-r border-[#262626] flex flex-col p-6 shrink-0 transition-colors ${c_bgPanel}`}>
         <div className="mb-10">
           <h1 className="text-2xl font-bold text-red-500 tracking-wider">CREATOR HUB</h1>
           <p className="text-xs text-gray-500 mt-1 font-medium">v1.0.0 | {t('createdBy')}</p>
         </div>
         <nav className="flex-1 space-y-2">
           <button onClick={() => setActiveTab('home')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-semibold text-sm ${activeTab === 'home' ? 'bg-red-500 text-white' : isDark ? 'text-gray-400 hover:bg-[#262626]' : 'text-zinc-600 hover:bg-zinc-100'}`}>🏠 <span>{t('dashboard')}</span></button>
-          <button onClick={() => setActiveTab('joiner')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-semibold text-sm ${activeTab === 'joiner' ? 'bg-red-500 text-white' : 'text-gray-400 hover:bg-[#262626]'}`}>🎬 <span>{t('videoJoiner')}</span></button>
-          <button onClick={() => setActiveTab('downloader')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-semibold text-sm ${activeTab === 'downloader' ? 'bg-red-500 text-white' : 'text-gray-400 hover:bg-[#262626]'}`}>📥 <span>{t('videoDownloader')}</span></button>
-          <button onClick={() => setActiveTab('converter')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-semibold text-sm ${activeTab === 'converter' ? 'bg-red-500 text-white' : 'text-gray-400 hover:bg-[#262626]'}`}>⚡ <span>{t('fileConverter')}</span></button>
+          <button onClick={() => setActiveTab('joiner')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-semibold text-sm ${activeTab === 'joiner' ? 'bg-red-500 text-white' : isDark ? 'text-gray-400 hover:bg-[#262626]' : 'text-zinc-600 hover:bg-zinc-100'}`}>🎬 <span>{t('videoJoiner')}</span></button>
+          <button onClick={() => setActiveTab('downloader')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-semibold text-sm ${activeTab === 'downloader' ? 'bg-red-500 text-white' : isDark ? 'text-gray-400 hover:bg-[#262626]' : 'text-zinc-600 hover:bg-zinc-100'}`}>📥 <span>{t('videoDownloader')}</span></button>
+          <button onClick={() => setActiveTab('converter')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-semibold text-sm ${activeTab === 'converter' ? 'bg-red-500 text-white' : isDark ? 'text-gray-400 hover:bg-[#262626]' : 'text-zinc-600 hover:bg-zinc-100'}`}>⚡ <span>{t('fileConverter')}</span></button>
+          <button onClick={() => setActiveTab('installer')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-semibold text-sm ${activeTab === 'installer' ? 'bg-red-500 text-white' : isDark ? 'text-gray-400 hover:bg-[#262626]' : 'text-zinc-600 hover:bg-zinc-100'}`}>🛠️ <span>{t('appInstaller')}</span></button>
         </nav>
         <div className="mt-auto">
-          <button onClick={() => setActiveTab('settings')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-semibold text-sm ${activeTab === 'settings' ? 'bg-red-500 text-white' : 'text-gray-400 hover:bg-[#262626]'}`}>⚙️ <span>{t('settings')}</span></button>
+          <button onClick={() => setActiveTab('settings')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-semibold text-sm ${activeTab === 'settings' ? 'bg-red-500 text-white' : isDark ? 'text-gray-400 hover:bg-[#262626]' : 'text-zinc-600 hover:bg-zinc-100'}`}>⚙️ <span>{t('settings')}</span></button>
         </div>
       </aside>
 
@@ -328,10 +392,11 @@ function App() {
 
         {/* HOME DASHBOARD */}
         {activeTab === 'home' && (
-          <div className="grid grid-cols-3 gap-6 w-full">
+          <div className="grid grid-cols-4 gap-6 w-full">
             <div className={`border p-6 rounded-3xl cursor-pointer hover:border-red-500 transition-all flex flex-col gap-2 ${c_bgPanel}`} onClick={() => setActiveTab('joiner')}><span className="text-3xl">🎞️</span><h3 className="text-lg font-bold">{t('videoJoiner')}</h3><p className={`text-xs ${c_textSub}`}>Gộp video chất lượng gốc theo mốc thời gian.</p></div>
             <div className={`border p-6 rounded-3xl cursor-pointer hover:border-red-500 transition-all flex flex-col gap-2 ${c_bgPanel}`} onClick={() => setActiveTab('downloader')}><span className="text-3xl">📥</span><h3 className="text-lg font-bold">{t('videoDownloader')}</h3><p className={`text-xs ${c_textSub}`}>Tải clip 4K siêu nét từ Youtube, TikTok, FB.</p></div>
             <div className={`border p-6 rounded-3xl cursor-pointer hover:border-red-500 transition-all flex flex-col gap-2 ${c_bgPanel}`} onClick={() => setActiveTab('converter')}><span className="text-3xl">⚡</span><h3 className="text-lg font-bold">{t('fileConverter')}</h3><p className={`text-xs ${c_textSub}`}>Đổi đuôi Media, Hình ảnh, Audio và ép cứng phụ đề.</p></div>
+            <div className={`border p-6 rounded-3xl cursor-pointer hover:border-red-500 transition-all flex flex-col gap-2 ${c_bgPanel}`} onClick={() => setActiveTab('installer')}><span className="text-3xl">🛠️</span><h3 className="text-lg font-bold">{t('appInstaller')}</h3><p className={`text-xs ${c_textSub}`}>Tự động tải và cài đặt hàng loạt phần mềm ngầm.</p></div>
           </div>
         )}
 
@@ -343,7 +408,6 @@ function App() {
               <h3 className="text-2xl font-bold mb-2">{t('joinTitle')}</h3>
               <div className={`absolute bottom-4 border px-4 py-2 rounded-full text-sm font-semibold ${videoList.length > 0 ? 'bg-red-500/20 border-red-500/50 text-red-500' : isDark ? 'bg-[#1a1a1a] border-[#333] text-gray-400' : 'bg-zinc-200 border-zinc-300 text-zinc-600'}`}>{videoList.length > 0 ? t('joinReady', {count: videoList.length}) : t('joinEmpty')}</div>
             </div>
-            {/* [ĐÃ SỬA XONG LỖI DƯ THẺ DIV Ơ ĐÂY] */}
             {isProcessing && ( <div className={`shrink-0 border rounded-2xl p-5 ${c_bgPanel}`}><div className="flex justify-between items-center mb-2"><span className={`text-sm font-medium ${isPaused ? 'text-yellow-500' : 'animate-pulse'}`}>{progressMsg}</span><span className="text-sm font-bold text-red-500">{progressPercent}%</span></div><div className={`w-full h-2 rounded-full overflow-hidden border ${c_bgInput}`}><div className={`h-full transition-all duration-300 ${isPaused ? 'bg-yellow-500' : 'bg-red-600'}`} style={{ width: `${progressPercent}%` }}></div></div></div> )}
             
             <div className={`shrink-0 border rounded-3xl p-6 flex items-center gap-8 w-full ${c_bgPanel}`}>
@@ -354,7 +418,6 @@ function App() {
                 </div>
                 <div className={`flex flex-col gap-1.5 border-t pt-3 ${c_borderT}`}><label className={`${c_textSub} text-xs font-medium`}>{t('joinOutput')}</label><div className="flex items-center gap-2"><input type="text" readOnly value={outputFolder || t('joinDefault')} className={`flex-1 border rounded-lg px-3 py-1.5 text-sm truncate focus:outline-none ${c_bgInput}`} /><button onClick={async () => { const path = await window.electron.ipcRenderer.invoke('open-folder-dialog'); if (path) setOutputFolder(path); }} className={`text-xs font-bold px-4 py-1.5 rounded-lg shrink-0 border transition-colors ${c_btnSec}`}>{t('btnChooseFolder')}</button></div></div>
                 <div className={`grid grid-cols-4 gap-6 border-t pt-3.5 w-full ${c_borderT}`}>
-                  {/* [ĐÃ SỬA VÁ LỖI XÓA CHỮ TIẾNG TRUNG] */}
                   <div className="flex flex-col gap-1.5 min-w-0 col-span-2">
                     <label className={`${c_textSub} text-xs font-medium`}>{t('joinLogo')}</label>
                     <div className="flex items-center gap-2 w-full">
@@ -427,7 +490,7 @@ function App() {
               </div>
               <div className="flex flex-col gap-2">
                 <label className={`text-sm font-medium ${c_textSub}`}>{t('convLabelSave')}</label>
-                <div className="flex items-center gap-2"><input type="text" readOnly value={convertFolder || t('convDefaultDir')} className={`flex-1 border rounded-xl px-4 py-3 text-xs truncate focus:outline-none ${c_bgInput}`} /><button disabled={isConverting} onClick={async () => { const path = await window.electron.ipcRenderer.invoke('open-folder-dialog'); if (path) setConvertFolder(path); }} className={`text-xs font-bold px-4 py-3 rounded-xl shrink-0 border ${c_btnSec}`}>{t('btnChooseFolder')}</button></div>
+                <div className="flex items-center gap-2"><input type="text" readOnly value={convertFolder || t('convDefaultDir')} className={`flex-1 border rounded-xl px-4 py-3 text-xs truncate focus:outline-none ${c_bgInput}`} /><button disabled={isConverting} onClick={async () => { const path = await window.electron.ipcRenderer.invoke('open-folder-dialog'); if (path) setConvertFolder(path); }} className={`text-xs font-bold px-4 py-3 rounded-xl transition-colors shrink-0 ${c_btnSec}`}>{t('btnChooseFolder')}</button></div>
               </div>
             </div>
             {isConverting && ( <div className="bg-red-500/5 border border-red-500/20 rounded-xl p-4 w-full"><div className="flex justify-between items-center mb-2"><span className="text-xs font-medium animate-pulse">{convMsg}</span><span className="text-xs font-bold text-red-500">{convPercent}%</span></div><div className={`w-full h-2 rounded-full overflow-hidden ${c_bgInput}`}><div className="bg-gradient-to-r from-red-600 to-red-500 h-full" style={{ width: `${convPercent}%` }}></div></div></div> )}
@@ -435,7 +498,120 @@ function App() {
           </div>
         )}
 
-        {/* TAB 4: SETTINGS */}
+        {/* TAB 4: APP INSTALLER - TÍCH HỢP TÌM KIẾM ONLINE KHÔNG GIỚI HẠN */}
+        {activeTab === 'installer' && (
+          <div className={`w-full flex-1 border rounded-3xl p-8 flex flex-col gap-6 overflow-y-auto ${c_bgPanel}`}>
+            <div>
+              <h3 className="text-2xl font-bold mb-1 flex items-center gap-2">{t('insTitle')}</h3>
+              <p className={`text-sm ${c_textSub}`}>{t('insSub')}</p>
+            </div>
+
+            {/* THANH TÌM KIẾM APP ONLINE MỚI CHÈN VÀO ĐẦU TAB */}
+            <div className={`p-4 rounded-2xl border flex items-center gap-3 ${c_bgTab}`}>
+              <input 
+                type="text" 
+                value={searchQuery}
+                disabled={isInstalling || isSearching}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSearchAppOnline()}
+                placeholder="Gõ tên ứng dụng muốn tìm (VD: CrystalDiskInfo, Unikey, Telegram, Chrome...)" 
+                className={`flex-1 border rounded-xl px-4 py-2.5 text-sm font-semibold focus:border-red-500 focus:outline-none transition-colors placeholder-zinc-400 ${c_bgInput}`} 
+              />
+              <button 
+                onClick={handleSearchAppOnline}
+                disabled={isInstalling || isSearching}
+                className="bg-red-600 hover:bg-red-500 text-white font-bold text-sm px-6 py-2.5 rounded-xl transition-all cursor-pointer disabled:bg-zinc-600"
+              >
+                {isSearching ? 'ĐANG TÌM...' : 'TÌM PHẦN MỀM'}
+              </button>
+            </div>
+
+            {/* KHU VỰC 1: HIỂN THỊ KẾT QUẢ TÌM KIẾM TỪ MICROSOFT CLOUD (NẾU CÓ) */}
+            {searchResults.length > 0 && (
+              <div className="flex flex-col gap-2">
+                <span className="text-sm font-bold text-red-500">🔍 Kết quả tra cứu từ Thư viện Windows Cloud:</span>
+                <div className="grid grid-cols-4 gap-4 w-full">
+                  {searchResults.map((item) => {
+                    const isChecked = selectedApps.includes(item.id)
+                    return (
+                      <div 
+                        key={item.id}
+                        onClick={() => !isInstalling && toggleAppSelection(item.id)}
+                        className={`border p-4 rounded-2xl cursor-pointer flex items-center gap-3 transition-all select-none ${isChecked ? 'border-red-500 bg-red-500/5' : isDark ? 'border-[#262626] hover:bg-zinc-800' : 'border-zinc-200 hover:bg-zinc-50'}`}
+                      >
+                        <div className={`w-5 h-5 border rounded flex items-center justify-center text-xs ${c_bgInput}`}>
+                          {isChecked && <span className="text-red-500 font-bold">✓</span>}
+                        </div>
+                        <div className="flex flex-col min-w-0 flex-1">
+                          <span className="text-xs font-bold text-zinc-500 truncate">{item.id}</span>
+                          <span className="text-sm font-bold truncate text-red-500">{item.name}</span>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* KHU VỰC 2: CÁC ỨNG DỤNG ĐƯỢC ĐỀ XUẤT CỐ ĐỊNH */}
+            <div className="flex flex-col gap-2 border-t pt-4 border-zinc-500/10">
+              <span className={`text-sm font-bold ${c_textSub}`}>📦 Phần mềm khuyên dùng phổ biến:</span>
+              <div className="grid grid-cols-4 gap-4 w-full">
+                {AVAILABLE_APPS.map((item) => {
+                  const isChecked = selectedApps.includes(item.id)
+                  return (
+                    <div 
+                      key={item.id}
+                      onClick={() => !isInstalling && toggleAppSelection(item.id)}
+                      className={`border p-4 rounded-2xl cursor-pointer flex items-center gap-3 transition-all select-none ${isChecked ? 'border-red-500 bg-red-500/5' : isDark ? 'border-[#262626] hover:bg-zinc-800' : 'border-zinc-200 hover:bg-zinc-50'}`}
+                    >
+                      <div className={`w-5 h-5 border rounded flex items-center justify-center text-xs ${c_bgInput}`}>
+                        {isChecked && <span className="text-red-500 font-bold">✓</span>}
+                      </div>
+                      <div className="flex flex-col min-w-0">
+                        <span className="text-xl mb-0.5">{item.icon}</span>
+                        <span className="text-sm font-semibold truncate">{item.name}</span>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* THANH ĐỒ THỊ TIẾN ĐỘ HAI TẦNG CHUYÊN NGHIỆP */}
+            {isInstalling && (
+              <div className={`bg-gradient-to-br ${isDark ? 'from-[#1a1a1a] to-[#121212] border-zinc-800' : 'from-zinc-50 to-zinc-100 border-zinc-200'} border rounded-2xl p-6 w-full mt-auto flex flex-col gap-4 shadow-inner`}>
+                <div className="flex flex-col gap-1">
+                  <div className="flex justify-between items-center text-xs font-semibold">
+                    <span className="text-red-500 animate-pulse">📦 App [{installProgress.appIndex}/{installProgress.totalApps}]: {installProgress.appName}</span>
+                    <span className={`${isDark ? 'text-gray-400' : 'text-zinc-600'}`}>Giai đoạn: <span className="text-red-500 font-bold">{installProgress.stage} ({installProgress.stagePercent}%)</span></span>
+                  </div>
+                  <div className={`w-full h-1.5 rounded-full overflow-hidden ${c_bgInput}`}>
+                    <div className="bg-red-500 h-full transition-all duration-300" style={{ width: `${installProgress.stagePercent}%` }}></div>
+                  </div>
+                </div>
+                <div className="flex flex-col gap-1 border-t pt-3 border-zinc-500/10">
+                  <div className="flex justify-between items-center text-xs font-semibold">
+                    <span className={`${c_textSub}`}>Tổng tiến trình cài đặt hệ thống</span>
+                    <span className="text-red-500 font-bold">{installProgress.globalPercent}%</span>
+                  </div>
+                  <div className={`w-full h-2 rounded-full overflow-hidden ${c_bgInput}`}>
+                    <div className="bg-gradient-to-r from-red-600 to-orange-500 h-full transition-all duration-200" style={{ width: `${installProgress.globalPercent}%` }}></div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <button 
+              onClick={handleLaunchInstallation} disabled={isInstalling}
+              className={`w-full font-bold py-4 rounded-xl text-lg transition-all mt-auto ${isInstalling ? 'bg-zinc-600 text-zinc-400 cursor-not-allowed' : 'bg-red-600 hover:bg-red-500 text-white shadow-[0_0_25px_rgba(220,38,38,0.15)]'}`}
+            >
+              {isInstalling ? t('insProcessing') : t('insBtn')}
+            </button>
+          </div>
+        )}
+
+        {/* TAB 5: SETTINGS */}
         {activeTab === 'settings' && (
           <div className={`w-full flex-1 border rounded-3xl p-8 flex flex-col gap-6 overflow-y-auto ${c_bgPanel}`}>
             <div>
@@ -459,10 +635,25 @@ function App() {
                 </div>
               </div>
             </div>
-            <div className={`mt-auto border-t p-4 flex justify-between text-xs font-medium ${c_borderT} ${c_textSub}`}><span>Product License: OpenSource Commercial</span><span>Platform Engine: Node.js Electron v26 & Tailwind v3</span></div>
+            <div className={`mt-auto border-t p-4 flex justify-between text-xs font-bold ${c_borderT} ${c_textSub}`}><span>Product License: OpenSource Commercial</span><span>Platform Engine: Node.js Electron v26 & Tailwind v3</span></div>
           </div>
         )}
       </main>
+
+      {/* POPUP WINDOW MODAL CHÍNH CHỦ CREATOR HUB */}
+      {customModal?.show && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 transition-all backdrop-blur-xs">
+          <div className={`w-[480px] p-7 rounded-3xl border ${c_bgPanel} shadow-2xl relative flex flex-col gap-4`}>
+            <button onClick={() => setCustomModal(null)} className={`absolute top-5 right-5 text-lg font-bold select-none cursor-pointer ${c_textSub} hover:text-red-500`}>✕</button>
+            <div className="flex items-center gap-2 border-b pb-3 border-zinc-500/10">
+              <span className="text-xl">🔔</span>
+              <h4 className="text-lg font-bold text-red-500 tracking-wide">{customModal.title}</h4>
+            </div>
+            <p className={`text-base font-semibold py-2 leading-relaxed ${isDark ? 'text-gray-200' : 'text-zinc-800'}`}>{customModal.message}</p>
+            <button onClick={() => setCustomModal(null)} className="w-full bg-red-600 hover:bg-red-500 text-white font-bold py-3.5 rounded-xl text-sm transition-all shadow-md cursor-pointer">XÁC NHẬN (OK)</button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
