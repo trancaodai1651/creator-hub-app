@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React from 'react'
 
 export const DownloaderTab: React.FC<{ dl: any, t: any, colors: any }> = ({ dl, t, colors }) => (
