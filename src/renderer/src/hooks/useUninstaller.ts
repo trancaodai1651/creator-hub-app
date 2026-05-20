@@ -1,7 +1,7 @@
 /* eslint-disable */
 import { useState, useEffect } from 'react'
 
-export function useUninstaller(t: any, setCustomModal: any, activeTab: string, joiner?: any) {
+export function useUninstaller(t: any, setCustomModal: any, activeTab: string) {
   const [systemApps, setSystemApps] = useState<any[]>([])
   const [uninstallerSearch, setUninstallerSearch] = useState('')
   const [isScanningApps, setIsScanningApps] = useState(false)
