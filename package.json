@@ -1,6 +1,6 @@
 {
   "name": "export-video-hub",
-  "version": "1.1.0",
+  "version": "0.0.1",
   "description": "An Electron application with React and TypeScript",
   "main": "./out/main/index.js",
   "author": "TCD",
@@ -60,10 +60,9 @@
   "build": {
     "appId": "com.tcd.creatorhub",
     "productName": "Creator Hub",
-    "asar": true,
     "asarUnpack": [
-      "node_modules/ffmpeg-static/**/*",
-      "node_modules/ffprobe-static/**/*"
+      "**/node_modules/ffmpeg-static/**/*",
+      "**/node_modules/ffprobe-static/**/*"
     ],
     "directories": {
       "output": "dist"

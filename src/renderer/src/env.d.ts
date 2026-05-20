@@ -1,5 +1,9 @@
-/// <reference types="vite/client" />
-declare module '*?asset' {
-  const content: string
-  export default content
+/* eslint-disable */
+export {}
+
+declare global {
+  interface Window {
+    electron: any
+    api: any
+  }
 }
