@@ -3,7 +3,7 @@ import React from 'react'
 import { AVAILABLE_APPS } from '../constants/apps'
 
 export const InstallerTab: React.FC<{ ins: any, t: any, colors: any, isDark: boolean, platform: string }> = ({ ins, t, colors, isDark, platform }) => (
-  <div className={`w-full flex-1 border rounded-3xl p-8 flex flex-col gap-6 overflow-y-auto ${colors.c_bgPanel}`}>
+  <div className={`w-full flex-1 border rounded-3xl p-8 flex flex-col gap-6 overflow-y-auto select-none ${colors.c_bgPanel}`}>
     <div><h3 className="text-2xl font-bold mb-1 flex items-center gap-2">{t('insTitle')}</h3><p className={`text-sm ${colors.c_textSub}`}>{t('insSub')} <span className="text-red-500 font-bold uppercase">{t('insCore', { core: platform === 'darwin' ? 'macOS Homebrew' : 'Windows Winget' })}</span></p></div>
     <div className={`p-4 rounded-2xl border flex items-center gap-3 ${colors.c_bgTab}`}><input type="text" value={ins.searchQuery} disabled={ins.isInstalling || ins.isSearching} onChange={(e) => ins.setSearchQuery(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && ins.handleSearchAppOnline()} placeholder={platform === 'darwin' ? t('insSearchMac') : t('insSearchWin')} className={`flex-1 border rounded-xl px-4 py-2.5 text-sm font-semibold focus:border-red-500 focus:outline-none transition-colors placeholder-zinc-400 ${colors.c_bgInput}`} /><button onClick={ins.handleSearchAppOnline} disabled={ins.isInstalling || ins.isSearching} className="bg-red-600 hover:bg-red-500 text-white font-bold text-sm px-6 py-2.5 rounded-xl transition-all disabled:bg-zinc-600">{ins.isSearching ? t('insSearching') : t('insSearchBtn')}</button></div>
     {ins.searchResults.length > 0 && (

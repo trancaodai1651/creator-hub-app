@@ -2,7 +2,7 @@
 import React from 'react'
 
 export const RenamerTab: React.FC<{ ren: any, t: any, colors: any, isDark: boolean }> = ({ ren, t, colors, isDark }) => (
-  <div className={`w-full flex-1 border rounded-3xl p-8 flex flex-col gap-5 overflow-hidden ${colors.c_bgPanel}`}>
+  <div className={`w-full flex-1 border rounded-3xl p-8 flex flex-col gap-5 overflow-hidden select-none ${colors.c_bgPanel}`}>
     <div><h3 className="text-2xl font-bold mb-1 flex items-center gap-2">{t('renamerTitle')}</h3><p className={`text-sm ${colors.c_textSub}`}>{t('renamerSub')}</p></div>
     <button onClick={async () => { const files = await window.electron.ipcRenderer.invoke('open-multi-files-dialog'); if (files && files.length > 0) { ren.setSelectedFiles(files) } }} className={`w-full py-5 border-2 border-dashed border-red-500/30 rounded-2xl font-bold text-sm hover:border-red-500 text-center transition-all cursor-pointer ${colors.c_bgTab}`}>{ren.selectedFiles.length > 0 ? t('renamerBtnLoaded', { count: ren.selectedFiles.length }) : t('renamerBtnAdd')}</button>
     <div className="grid grid-cols-5 gap-4 w-full border-t pt-4 border-zinc-500/10 items-end">

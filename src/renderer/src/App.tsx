@@ -13,6 +13,8 @@ import { useRenamer } from './hooks/useRenamer'
 import { useInstaller } from './hooks/useInstaller'
 import { useUninstaller } from './hooks/useUninstaller'
 import { useCleaner } from './hooks/useCleaner'
+import { useChatbot } from './hooks/useChatbot'
+import { usePublisher } from './hooks/usePublisher'
 
 // Import giao diện các Tabs độc lập
 import { JoinerTab } from './modules/JoinerTab'
@@ -26,6 +28,8 @@ import { CleanerTab } from './modules/CleanerTab'
 import { SettingsTab } from './modules/SettingsTab'
 import { WelcomeModal } from './modules/WelcomeModal'
 import { GuideTab } from './modules/GuideTab'
+import { ChatbotTab } from './modules/ChatbotTab'
+import { PublisherTab } from './modules/PublisherTab'
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('home')
@@ -35,7 +39,7 @@ export default function App() {
   const [isDark, setIsDark] = useState(true)
   const [customModal, setCustomModal] = useState<any>(null)
   const [updateProgress, setUpdateProgress] = useState<{ show: boolean; msg: string; percent: number } | null>(null)
-  
+
   // ==========================================
   // STATE CHO MÀN HÌNH KHỞI ĐỘNG (SPLASH SCREEN)
   // ==========================================
@@ -76,6 +80,8 @@ export default function App() {
   const ins = useInstaller(t, setCustomModal)
   const un = useUninstaller(t, setCustomModal, activeTab)
   const clean = useCleaner(t, setCustomModal, activeTab)
+  const chat = useChatbot(t, setCustomModal, groqKey) // Đã được đưa vào trong hàm App()
+  const pub = usePublisher(t, setCustomModal)
 
   useEffect(() => {
     window.electron.ipcRenderer.invoke('get-platform').then((res: string) => setPlatform(res))
@@ -123,7 +129,12 @@ export default function App() {
         setCustomModal({
           show: true,
           title: `🚀 PHÁT HIỆN BẢN CẬP NHẬT MỚI (v${result.latestVersion})`,
-          message: `Hệ thống phát hiện phiên bản bạn đang dùng (v${result.currentVersion}) đã cũ.\n\nNội dung cập nhật:\n${result.releaseNotes}\n\nVui lòng bấm OK để hệ thống tiến hành tự động tải về phiên bản mới.`,
+          message: `Hệ thống phát hiện phiên bản bạn đang dùng (v${result.currentVersion}) đã cũ.
+
+Nội dung cập nhật:
+${result.releaseNotes}
+
+Vui lòng bấm OK để hệ thống tiến hành tự động tải về phiên bản mới.`,
           onConfirm: async () => {
             setUpdateProgress({ show: true, msg: t('updateConnecting') || 'Đang kết nối cổng tải GitHub...', percent: 0 });
             (window as any).electron.ipcRenderer.on('update-progress', (_e: any, data: any) => {
@@ -172,6 +183,13 @@ export default function App() {
 
   return (
     <div className={`flex h-screen overflow-hidden font-sans transition-colors duration-200 ${colors.c_bgMain}`}>
+      
+      {/* 🚀 THẺ DIV KÉO THẢ INLINE SIÊU CẤP ĐÃ ĐƯỢC CHÈN ĐÚNG VỊ TRÍ */}
+      <div 
+        className="fixed top-0 left-0 right-[140px] h-10 select-none bg-transparent"
+        style={{ WebkitAppRegion: 'drag', zIndex: 99999999 } as any}
+      />
+
       {/* ========================================== */}
       {/* 🚀 MÀN HÌNH KHỞI ĐỘNG (SPLASH SCREEN)      */}
       {/* ========================================== */}
@@ -179,7 +197,25 @@ export default function App() {
         <div className={`fixed inset-0 z-[99999] flex flex-col items-center justify-center bg-[#0a0a0a] transition-opacity duration-500 ease-in-out ${bootState === 'fading' ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
           <div className="absolute w-72 h-72 bg-red-600/20 blur-[100px] rounded-full animate-pulse"></div>
           <div className="relative z-10 flex flex-col items-center">
-            <span className="text-7xl animate-bounce drop-shadow-2xl mb-6 block">🚀</span>
+            {/* LOGO CHÍNH (THAY TÀU VŨ TRỤ) */}
+            <div className="w-24 h-24 mb-6 animate-bounce drop-shadow-[0_0_25px_rgba(239,68,68,0.4)]">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" className="w-full h-full">
+                <defs>
+                  <linearGradient id="brandLg" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#dc2626" />
+                    <stop offset="100%" stopColor="#f97316" />
+                  </linearGradient>
+                  <filter id="glowLg" x="-20%" y="-20%" width="140%" height="140%">
+                    <feGaussianBlur stdDeviation="15" result="blur" />
+                    <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                  </filter>
+                </defs>
+                <circle cx="256" cy="256" r="140" fill="none" stroke="url(#brandLg)" strokeWidth="40" opacity="0.15" />
+                <circle cx="256" cy="256" r="140" fill="none" stroke="url(#brandLg)" strokeWidth="40" strokeDasharray="200 120" strokeLinecap="round" transform="rotate(-90 256 256)" filter="url(#glowLg)"/>
+                <path d="M216 186 L336 256 L216 326 Z" fill="url(#brandLg)" filter="url(#glowLg)" />
+                <path d="M340 160 L350 130 L380 120 L350 110 L340 80 L330 110 L300 120 L330 130 Z" fill="#ffffff" filter="url(#glowLg)" opacity="0.9" />
+              </svg>
+            </div>
             <h1 className="text-5xl font-black text-white tracking-[0.25em] uppercase drop-shadow-lg">
               Creator<span className="text-red-500">Hub</span>
             </h1>
@@ -200,8 +236,39 @@ export default function App() {
       {/* SIDEBAR NAVIGATION (Ẩn khi ở tab Dashboard)*/}
       {/* ========================================== */}
       {activeTab !== 'home' && (
-        <aside className={`w-80 flex flex-col p-6 shrink-0 border-r ${colors.c_bgPanel}`}>
-          <div className="mb-10"><h1 className="text-2xl font-bold text-red-500 tracking-wider">CREATOR HUB</h1><p className="text-xs text-gray-500 mt-1 font-medium">v1.1.1 | {t('createdBy')}</p></div>
+        // 👇 TÍCH HỢP ĐỒNG THỜI QUYỀN KÉO THẢ (drag) VÀ KHÓA BÔI XANH (select-none) CHO SIDEBAR
+        <aside className={`w-80 flex flex-col p-6 shrink-0 border-r select-none ${colors.c_bgPanel}`} style={{ WebkitAppRegion: 'drag' } as any}>
+          <div className="mb-10 select-none flex items-center gap-3">
+            {/* 🚀 KHỐI LOGO VECTOR SVG */}
+            <div className="w-11 h-11 shrink-0">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" className="w-full h-full drop-shadow-md">
+                <defs>
+                  <linearGradient id="brand" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#dc2626" />
+                    <stop offset="100%" stopColor="#f97316" />
+                  </linearGradient>
+                  <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+                    <feGaussianBlur stdDeviation="12" result="blur" />
+                    <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                  </filter>
+                </defs>
+                <circle cx="256" cy="256" r="140" fill="none" stroke="url(#brand)" strokeWidth="40" opacity="0.15" />
+                <circle cx="256" cy="256" r="140" fill="none" stroke="url(#brand)" strokeWidth="40" strokeDasharray="200 120" strokeLinecap="round" transform="rotate(-90 256 256)" filter="url(#glow)"/>
+                <path d="M216 186 L336 256 L216 326 Z" fill="url(#brand)" filter="url(#glow)" />
+                <path d="M340 160 L350 130 L380 120 L350 110 L340 80 L330 110 L300 120 L330 130 Z" fill="#ffffff" filter="url(#glow)" opacity="0.9" />
+              </svg>
+            </div>
+            
+            {/* TÊN ỨNG DỤNG & VERSION */}
+            <div className="flex flex-col justify-center">
+              <h1 className="text-[22px] font-black bg-clip-text text-transparent bg-gradient-to-r from-red-500 to-orange-400 tracking-wide leading-none">
+                CREATOR HUB
+              </h1>
+              <p className="text-[10px] text-zinc-500 mt-1.5 font-bold tracking-widest uppercase">
+                v1.1.1 | {t('createdBy')}
+              </p>
+            </div>
+          </div>
           
           <nav className="flex-1 space-y-2 overflow-y-auto pr-1 custom-scrollbar">
             {SIDEBAR_TABS.map((tab: any) => {
@@ -210,6 +277,7 @@ export default function App() {
                 <button 
                   key={tab.id} 
                   onClick={() => setActiveTab(tab.id)} 
+                  style={{ WebkitAppRegion: 'no-drag' } as any} // Trả lại quyền click cho nút bấm
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all relative overflow-hidden ${
                     isActive 
                       ? 'bg-red-500 text-white shadow-md' 
@@ -232,7 +300,11 @@ export default function App() {
           </nav>
 
           <div className="mt-auto">
-            <button onClick={() => setActiveTab('settings')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${activeTab === 'settings' ? 'bg-red-500 text-white' : 'text-zinc-500'}`}>
+            <button 
+              onClick={() => setActiveTab('settings')} 
+              style={{ WebkitAppRegion: 'no-drag' } as any} // Trả lại quyền click cho nút Settings
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${activeTab === 'settings' ? 'bg-red-500 text-white' : 'text-zinc-500 hover:bg-[#262626]'}`}
+            >
               ⚙️ <span>{t('settings')}</span>
             </button>
           </div>
@@ -240,7 +312,7 @@ export default function App() {
       )}
 
       {/* ========================================== */}
-      {/* MAIN VIEW CONTENT                          */}
+      {/* MAIN VIEW CONTENT                            */}
       {/* ========================================== */}
       <main className={`flex-1 p-5 md:p-10 flex flex-col h-screen overflow-hidden relative ${activeTab === 'home' ? 'max-w-[1400px] mx-auto w-full' : ''}`}>
 
@@ -255,9 +327,12 @@ export default function App() {
           }
         `}</style>
 
-        {/* HEADER TÙY BIẾN */}
-        {activeTab === 'home' ? (
-          <header className="w-full flex justify-between items-center mb-6 md:mb-10 mt-2 shrink-0 px-2 md:px-4 opacity-0 animate-fade-in-up">
+        {/* ========================================== */}
+        {/* HEADER TÙY BIẾN (CHỈ HIỂN THỊ Ở TRANG CHỦ)   */}
+        {/* ========================================== */}
+        {activeTab === 'home' && (
+          // 👇 KHÓA BÔI XANH CHO TOÀN BỘ HEADER TRANG CHỦ
+          <header className="w-full flex justify-between items-center mb-6 md:mb-10 mt-2 shrink-0 px-2 md:px-4 opacity-0 animate-fade-in-up select-none">
             <div className="w-10 md:w-14"></div> {/* Spacer */}
             
             <div className="flex flex-col items-center text-center">
@@ -272,14 +347,13 @@ export default function App() {
             {/* NÚT CÀI ĐẶT TRÊN DASHBOARD */}
             <button
               onClick={() => setActiveTab('settings')}
+              style={{ WebkitAppRegion: 'no-drag' } as any} // Đảm bảo nút click được
               className={`group flex items-center justify-center w-10 h-10 md:w-14 md:h-14 rounded-xl md:rounded-2xl border transition-all duration-300 hover:scale-110 active:scale-95 shadow-sm hover:shadow-[0_0_20px_rgba(239,68,68,0.3)] ${isDark ? 'bg-[#1a1a1a] border-zinc-800 hover:border-red-500/50' : 'bg-white border-zinc-200 hover:border-red-400'}`}
               title="Cài đặt hệ thống"
             >
               <span className="text-xl md:text-2xl group-hover:rotate-90 transition-transform duration-500 text-zinc-400 group-hover:text-red-500">⚙️</span>
             </button>
           </header>
-        ) : (
-          <header className="mb-8 shrink-0"><h2 className="text-3xl font-bold">{t('welcome')}</h2></header>
         )}
 
         {/* ========================================== */}
@@ -329,12 +403,12 @@ export default function App() {
               </div>
             </div>
 
-            {/* CHỮ KÝ CÁ NHÂN (Được tách riêng ra ngoài vùng cuộn để luôn hiển thị ở đáy màn hình) */}
-            <div className="shrink-0 pt-6 pb-2 w-full flex justify-center items-center opacity-0 animate-fade-in-up" style={{ animationDelay: '600ms' }}>
+            {/* CHỮ KÝ CÁ NHÂN */}
+            <div className="shrink-0 pt-6 pb-2 w-full flex justify-center items-center opacity-0 animate-fade-in-up select-none" style={{ animationDelay: '600ms' }}>
               <div className={`flex items-center gap-4 px-6 md:px-8 py-2 md:py-3 rounded-full border backdrop-blur-md shadow-sm ${isDark ? 'bg-zinc-900/40 border-zinc-800/50' : 'bg-white/50 border-zinc-200'}`}>
                 <span className="w-4 md:w-8 h-[1px] bg-gradient-to-r from-transparent to-zinc-500"></span>
                 <p className="text-[10px] md:text-xs font-semibold text-zinc-500 uppercase tracking-widest">
-                  Engineered with <span className="text-red-500 animate-pulse mx-1 text-sm inline-block">❤️</span> by <span className="text-red-500 font-black text-sm">TCD</span>
+                {t('engineeredBy')} <span className="text-red-500 font-black text-sm ml-1">TCD</span>
                 </p>
                 <span className="w-4 md:w-8 h-[1px] bg-gradient-to-l from-transparent to-zinc-500"></span>
               </div>
@@ -342,17 +416,29 @@ export default function App() {
           </>
         )}
 
-        {/* CÁC TÍNH NĂNG VÀ SETTINGS */}
-        {activeTab === 'joiner' && <JoinerTab joiner={joiner} t={t} isDark={isDark} colors={colors} />}
-        {activeTab === 'downloader' && <DownloaderTab dl={dl} t={t} colors={colors} />}
-        {activeTab === 'converter' && <ConverterTab conv={conv} t={t} colors={colors} isDark={isDark} />}
-        {activeTab === 'tts' && <TtsTab tts={tts} t={t} colors={colors} />}
-        {activeTab === 'renamer' && <RenamerTab ren={ren} t={t} colors={colors} isDark={isDark} />}
-        {activeTab === 'installer' && <InstallerTab ins={ins} t={t} colors={colors} isDark={isDark} platform={platform} />}
-        {activeTab === 'uninstaller' && <UninstallerTab un={un} t={t} colors={colors} isDark={isDark} platform={platform} />}
-        {activeTab === 'cleaner' && <CleanerTab clean={clean} t={t} colors={colors} isDark={isDark} />}
-        {activeTab === 'guide' && <GuideTab t={t} colors={colors} isDark={isDark} />}
-        {activeTab === 'settings' && <SettingsTab cfg={{ language, setLanguage, themeSetting, setThemeSetting, groqKey, setGroqKey, elevenKey, setElevenKey }} t={t} colors={colors} isDark={isDark} onCheckUpdate={() => handleCheckUpdate(true)} />}
+        {/* ========================================== */}
+        {/* CÁC TÍNH NĂNG VÀ SETTINGS (CÓ ANIMATION)   */}
+        {/* ========================================== */}
+        {activeTab !== 'home' && (
+          <div 
+            key={activeTab} 
+            className="w-full h-full flex-1 flex flex-col opacity-0 animate-fade-in-up"
+            style={{ animationDuration: '0.4s' }}
+          >
+            {activeTab === 'joiner' && <JoinerTab joiner={joiner} t={t} isDark={isDark} colors={colors} />}
+            {activeTab === 'downloader' && <DownloaderTab dl={dl} t={t} colors={colors} />}
+            {activeTab === 'converter' && <ConverterTab conv={conv} t={t} colors={colors} isDark={isDark} />}
+            {activeTab === 'tts' && <TtsTab tts={tts} t={t} colors={colors} />}
+            {activeTab === 'renamer' && <RenamerTab ren={ren} t={t} colors={colors} isDark={isDark} />}
+            {activeTab === 'installer' && <InstallerTab ins={ins} t={t} colors={colors} isDark={isDark} platform={platform} />}
+            {activeTab === 'uninstaller' && <UninstallerTab un={un} t={t} colors={colors} isDark={isDark} platform={platform} />}
+            {activeTab === 'cleaner' && <CleanerTab clean={clean} t={t} colors={colors} isDark={isDark} />}
+            {activeTab === 'chatbot' && <ChatbotTab chat={chat} t={t} colors={colors} isDark={isDark} />}
+            {activeTab === 'publisher' && <PublisherTab publisher={pub} t={t} colors={colors} isDark={isDark} />}
+            {activeTab === 'guide' && <GuideTab t={t} colors={colors} isDark={isDark} />}
+            {activeTab === 'settings' && <SettingsTab cfg={{ language, setLanguage, themeSetting, setThemeSetting, groqKey, setGroqKey, elevenKey, setElevenKey }} t={t} colors={colors} isDark={isDark} onCheckUpdate={() => handleCheckUpdate(true)} />}
+          </div>
+        )}
       </main>
 
       {/* POPUP WINDOW MODAL CHÍNH CHỦ */}

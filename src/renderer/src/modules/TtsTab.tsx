@@ -2,7 +2,7 @@
 import React from 'react'
 
 export const TtsTab: React.FC<{ tts: any, t: any, colors: any }> = ({ tts, t, colors }) => (
-  <div className={`w-full flex-1 border rounded-3xl p-8 flex flex-col gap-5 overflow-y-auto ${colors.c_bgPanel}`}>
+  <div className={`w-full flex-1 border rounded-3xl p-8 flex flex-col gap-5 overflow-y-auto select-none ${colors.c_bgPanel}`}>
     <div><h3 className="text-2xl font-bold mb-1 flex items-center gap-2">{t('ttsTitle')}</h3><p className={`text-sm ${colors.c_textSub}`}>{t('ttsSub')}</p></div>
     <div className="grid grid-cols-2 gap-6 w-full border-t pt-4 border-zinc-500/10">
       <div className="flex flex-col gap-2">

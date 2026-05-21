@@ -11,7 +11,8 @@ export const en: Record<string, string> = {
   cleaner: "System Cleaner",
   settings: "Settings",
   welcome: "Welcome Back!",
-  createdBy: "Created by TCD", 
+  createdBy: "Created by TCD",
+  engineeredBy: "ENGINEERED BY", 
   start: "START PROCESS",
   download: "START DOWNLOAD",
   convert: "START CONVERT",
@@ -159,6 +160,49 @@ export const en: Record<string, string> = {
   cleanerScanning: "⚙️ MEASURING HARD DRIVE CACHE, PLEASE WAIT A MOMENT...",
   cleanerEmpty: "No scan data. Click 'Scan Full System Junk' to start.",
   cleanerAlertZero: "Please select at least 1 item to clean!",
+
+  // --- Tab: Chatbot AI ---
+  tabChatbot: "AI Copilot",
+  descChatbot: "Your ultimate partner for brainstorming, analyzing data, and writing scripts.",
+  chatEmpty: "👋 Hello! I am your Creator Hub AI assistant. How can I help you today?",
+  chatPlaceholder: "Type your question or prompt here...",
+  chatSend: "SEND",
+  chatRequireKey: "Please configure your Groq API Key in Settings to use the Chatbot.",
+  
+  // Các từ khóa bị thiếu nè:
+  modelLabel: "AI Model",
+  newChat: "New chat",
+  chatHistory: "Chat History",
+  chatClearCache: "Clear Chat Storage",
+  chatClearTitle: "🔴 CLEAR ALL CHAT HISTORY",
+  chatClearConfirm: "This will permanently delete all past conversations from the app's cache to free up disk space. Are you sure you want to proceed?",
+  chatAttachFile: "Attach file",
+  chatInputPlaceholder: "Ask anything or request a script here...",
+  chatSendBtn: "SEND",
+
+  // Danh sách model:
+  model_llama33: "Llama 3.3 (70B) - Ultimate Smart",
+  model_llama31_70b: "Llama 3.1 (70B) - Expert Analyst",
+  model_llama31_8b: "Llama 3.1 (8B) - Lightning Fast",
+  model_llama32_3b: "Llama 3.2 (3B) - Compact Micro",
+  model_deepseek_r1: "DeepSeek R1 (70B) - Deep Reasoning",
+  model_mixtral: "Mixtral 8x7B - Wide Context 32K",
+  model_gemma2: "Google Gemma 2 (9B) - Creative Text",
+
+  chatConfigError: "⚠️ CONFIG ERROR",
+  chatConnectError: "❌ AI CONNECTION ERROR",
+
+  pubTitle: "Auto-Content Publisher Station",
+  pubSub: "Automate browsers to upload videos directly to platforms without API restriction.",
+  pubChooseVideo: "Import Target Video",
+  pubNoVideo: "No video imported yet",
+  pubMetaTitle: "Video Title",
+  pubMetaDesc: "Description Content",
+  pubMetaTags: "Hashtags (Separated by commas)",
+  pubSelectPlatform: "Select Target Platforms",
+  pubBtnPublish: "LAUNCH PUBLISHING",
+  pubLogTitle: "Automation Live Logs",
+  pubLogEmpty: "Queue empty. Please import a video and click Launch.",
   
   introIgnore: "Got it, skip and don't show this message again.",
   introStart: "START USING",
@@ -202,9 +246,10 @@ export const en: Record<string, string> = {
   guideCleanerTitle: '🧹 System Cleaner',
   guideCleanerContent: 'Step-by-step Instructions:\n1. Open the "Cleaner" tab.\n2. Select the categories to clean (OS Caches, Browser junk, and especially the massive CapCut render caches).\n3. Click "SCAN & CLEAN".\n4. Wait for the system to free up gigabytes of storage space.',
 
-  guideHelpTitle: 'Need more help?',
-  guideHelpDesc: 'If you encounter bugs or have feature ideas, reach out to the author.',
-  guideFeedbackBtn: 'Send Feedback',
+  // 👇 DÁN BỔ SUNG 3 DÒNG NÀY VÀO ĐÂY:
+  guideHelpTitle: "Need More Help or Want to Suggest?",
+  guideHelpDesc: "If you encounter any minor bugs or have ideas for feature improvements, feel free to contact the developer directly.",
+  guideFeedbackBtn: "SEND FEEDBACK",
 
   setMainTitle: "⚙️ System Configurations",
   setMainSub: "Switch application language and customize theme color variations.",

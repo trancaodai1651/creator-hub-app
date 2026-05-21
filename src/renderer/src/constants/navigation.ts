@@ -25,5 +25,7 @@ export const SIDEBAR_TABS: TabItem[] = [
   { id: 'installer', nameKey: 'appInstaller', descKey: 'descInstaller', icon: '🛠️', isWip: true },
   { id: 'uninstaller', nameKey: 'uninstaller', descKey: 'descUninstaller', icon: '❌', isWip: true },
   { id: 'cleaner', nameKey: 'cleaner', descKey: 'descCleaner', icon: '🧹', isWip: true },
+  { id: 'chatbot', icon: '🤖', nameKey: 'tabChatbot', descKey: 'descChatbot' },
+  { id: 'publisher', nameKey: 'pubTitle', descKey: 'pubSub', icon: '🚀', isWip: true },
   { id: 'guide', icon: '📚', nameKey: 'tabGuide', descKey: 'descGuide' }
 ]

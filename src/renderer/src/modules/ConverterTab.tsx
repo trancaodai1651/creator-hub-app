@@ -2,7 +2,7 @@
 import React from 'react'
 
 export const ConverterTab: React.FC<{ conv: any, t: any, colors: any, isDark: boolean }> = ({ conv, t, colors }) => (
-  <div className={`w-full flex-1 border rounded-3xl p-8 flex flex-col gap-6 overflow-y-auto ${colors.c_bgPanel}`}>
+  <div className={`w-full flex-1 border rounded-3xl p-8 flex flex-col gap-6 overflow-y-auto select-none ${colors.c_bgPanel}`}>
     <div><h3 className="text-2xl font-bold mb-1 flex items-center gap-2">{t('convTitle')}</h3><p className={`text-sm ${colors.c_textSub}`}>{t('convSub')}</p></div>
     <div className="grid grid-cols-2 gap-6 w-full">
       <div className="flex flex-col gap-2"><label className={`text-sm font-medium ${colors.c_textSub}`}>{t('convLabelFile')}</label><div className="flex items-center gap-2"><input type="text" readOnly value={conv.convertFile || "Select File Source..."} className={`flex-1 border rounded-xl px-4 py-3 text-xs truncate focus:outline-none ${colors.c_bgInput}`} /><button disabled={conv.isConverting} onClick={async () => { const path = await window.electron.ipcRenderer.invoke('open-file-dialog', null); if (path) conv.setConvertFile(path); }} className={`text-xs font-bold px-4 py-3 rounded-xl shrink-0 border ${colors.c_btnSec}`}>{t('btnChooseFile')}</button></div></div>

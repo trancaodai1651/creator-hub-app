@@ -9,7 +9,7 @@ export const SettingsTab: React.FC<{
   isDark: boolean,
   onCheckUpdate: () => void 
 }> = ({ cfg, t, colors, isDark, onCheckUpdate }) => (
-  <div className={`w-full flex-1 border rounded-3xl p-8 flex flex-col gap-6 overflow-y-auto ${colors.c_bgPanel}`}>
+  <div className={`w-full flex-1 border rounded-3xl p-8 flex flex-col gap-6 overflow-y-auto select-none ${colors.c_bgPanel}`}>
     <div>
       <h3 className="text-2xl font-bold mb-1 flex items-center gap-2">{t('setMainTitle')}</h3>
       <p className={`text-sm ${colors.c_textSub}`}>{t('setMainSub')}</p>

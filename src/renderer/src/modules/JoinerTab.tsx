@@ -10,7 +10,7 @@ interface JoinerTabProps {
 
 export const JoinerTab: React.FC<JoinerTabProps> = ({ joiner, t, isDark, colors }) => {
   return (
-    <div className="flex-1 flex flex-col gap-6 h-full overflow-hidden w-full">
+    <div className="flex-1 flex flex-col gap-6 h-full overflow-hidden w-full select-none">
       <div 
         onDrop={joiner.handleDrop} 
         onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }} 

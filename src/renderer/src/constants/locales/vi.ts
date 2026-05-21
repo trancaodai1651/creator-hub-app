@@ -12,7 +12,8 @@ export const vi: Record<string, string> = {
   cleaner: "Dọn rác hệ thống",
   settings: "Cài đặt",
   welcome: "Chào mừng trở lại!",
-  createdBy: "Created by TCD", 
+  createdBy: "Created by TCD", // Dòng cũ
+  engineeredBy: "PHÁT TRIỂN BỞI",
   start: "BẮT ĐẦU VẬN HÀNH",
   download: "BẮT ĐẦU TẢI VIDEO",
   convert: "BẮT ĐẦU CHUYỂN ĐỔI FILE",
@@ -170,6 +171,67 @@ export const vi: Record<string, string> = {
   cleanerEmpty: "Chưa có dữ liệu quét. Nhấn \"Quét rác toàn diện\" để bắt đầu.",
   cleanerAlertZero: "Vui lòng chọn ít nhất 1 mục để dọn dẹp!",
 
+  // --- Tab 9: Chatbot AI (Đã được dọn dẹp trùng lặp và cập nhật mới nhất) ---
+  tabChatbot: "AI Copilot",
+  descChatbot: "Cộng sự đắc lực giúp bạn lên ý tưởng, phân tích dữ liệu và viết kịch bản.",
+  chatEmpty: "👋 Xin chào! Mình là trợ lý AI của Creator Hub. Mình có thể giúp gì cho bạn hôm nay?",
+  chatPlaceholder: "Nhập câu hỏi hoặc yêu cầu của bạn vào đây...",
+  chatSend: "GỬI",
+  chatRequireKey: "Vui lòng nhập Groq API Key trong phần Cài đặt để sử dụng Chatbot.",
+  modelLabel: "Mô hình AI",
+  newChat: "Chat mới",
+  chatHistory: "Lịch sử trò chuyện",
+  chatClearCache: "Dọn dẹp bộ nhớ đệm",
+  chatClearTitle: "🔴 XÓA TOÀN BỘ LỊCH SỬ CHAT",
+  chatClearConfirm: "Hành động này sẽ xóa vĩnh viễn toàn bộ các cuộc trò chuyện cũ trong bộ nhớ đệm (Cache) của ứng dụng để giải phóng dung lượng ổ đĩa. Bạn có chắc chắn muốn tiếp tục?",
+  chatAttachFile: "Đính kèm tệp tin",
+  chatInputPlaceholder: "Nhập câu hỏi hoặc yêu cầu viết kịch bản tại đây...",
+  chatSendBtn: "GỬI ANH",
+  model_llama33: "Llama 3.3 (70B) - Vua Khôn Ngoan",
+  model_llama31_70b: "Llama 3.1 (70B) - Chuyên Gia Phân Tích",
+  model_llama31_8b: "Llama 3.1 (8B) - Tốc Độ Ánh Sáng",
+  model_llama32_3b: "Llama 3.2 (3B) - Nhỏ Gọn Siêu Tốc",
+  model_deepseek_r1: "DeepSeek R1 (70B) - Siêu Suy Luận",
+  model_mixtral: "Mixtral 8x7B - Bộ Nhớ Khủng 32K",
+  model_gemma2: "Google Gemma 2 (9B) - Sáng Tạo Nội Dung",
+  chatConfigError: "Lỗi cấu hình",
+  chatConnectError: "Lỗi kết nối AI",
+
+  pubTitle: "Trạm Phát Hành Video Tự Động",
+  pubSub: "Tự động hóa trình duyệt đẩy video trực tiếp lên các nền tảng mà không cần cấp quyền API.",
+  pubChooseVideo: "Chọn Video Cần Đăng",
+  pubNoVideo: "Chưa nạp video nào",
+  pubMetaTitle: "Tiêu đề video",
+  pubMetaDesc: "Mô tả nội dung (Description)",
+  pubMetaTags: "Hashtags (Cách nhau bởi dấu phẩy)",
+  pubSelectPlatform: "Chọn nền tảng đích",
+  pubBtnPublish: "KÍCH HOẠT PHÁT HÀNH",
+  pubLogTitle: "Nhật ký tiến trình ngầm (Automation Logs)",
+  pubLogEmpty: "Hàng chờ trống. Vui lòng nạp video và nhấn Phát hành.",
+
+  // --- Tab 10: Hướng dẫn sử dụng ---
+  tabGuide: 'Hướng dẫn',
+  descGuide: 'Sổ tay sử dụng & Giải đáp thắc mắc các tính năng.',
+  guideJoinerTitle: '🎬 Nối Video (Video Joiner)',
+  guideJoinerContent: 'Thao tác từng bước:\n1. Bấm vào icon Thư mục ở giữa màn hình để chọn folder chứa các video đầu vào.\n2. Nhập số phút Tối thiểu - Tối đa. App sẽ tự ghép các video để đạt tổng thời lượng này.\n3. (Tùy chọn) Tích chọn "Chứa 1 video dài (Trụ cột)" để lấy video dài nhất làm nòng cốt.\n4. (Tùy chọn) Tích chọn "Dùng GPU Render" để xuất file siêu nhanh bằng Card đồ họa.\n5. Tùy chỉnh "Tỷ lệ khung hình" hoặc chèn "Logo" (nếu cần).\n6. Bấm nút "BẮT ĐẦU VẬN HÀNH" và chờ kết quả.',
+  guideDownloaderTitle: '📥 Tải Video (Downloader)',
+  guideDownloaderContent: 'Thao tác từng bước:\n1. Copy đường link video hoặc Playlist (từ Youtube, TikTok, Facebook...).\n2. Dán link vào thanh địa chỉ của ứng dụng.\n3. (Tùy chọn) Chọn định dạng tải: Giữ nguyên MP4 (để lấy video) hoặc đổi sang MP3 (để lấy nhạc).\n4. (Tùy chọn) Nhập thời gian Bắt đầu / Kết thúc nếu bạn chỉ muốn cắt lấy một đoạn ngắn.\n5. Bấm nút "TẢI XUỐNG".',
+  guideConverterTitle: '⚡ Đổi Đuôi Media (Converter)',
+  guideConverterContent: 'Thao tác từng bước:\n1. Kéo thả các file media vào phần mềm (hoặc bấm chọn thủ công).\n2. Tại ô "Định dạng đích", chọn đuôi bạn muốn đổi sang (ví dụ: MP4, MP3, WEBP...).\n3. (Tùy chọn) Nếu muốn nhúng phụ đề dính chết vào video, bấm "Chọn file Sub" và nạp file .srt hoặc .ass vào.\n4. Bấm "CHUYỂN ĐỔI" để hệ thống dùng GPU xử lý.',
+  guideTtsTitle: '🗣️ Giọng Đọc AI (ElevenLabs)',
+  guideTtsContent: 'Thao tác từng bước:\n1. Vào mục "Cài đặt ⚙️" ở góc trái dưới cùng màn hình.\n2. Dán mã ElevenLabs API Key của bạn vào (Bấm vào link bên dưới ô nhập để lấy mã miễn phí).\n3. Quay lại trang Giọng đọc AI, copy & dán đoạn văn bản bạn cần đọc vào khung trống.\n4. Chọn tên Giọng đọc, kéo thanh trượt "Độ chân thực" (Càng cao đọc càng giống người thật nhưng dễ vấp).\n5. Bấm "TẠO GIỌNG NÓI" để tải file MP3 về máy.',
+  guideRenamerTitle: '📁 Đổi Tên Hàng Loạt (Renamer)',
+  guideRenamerContent: 'Thao tác từng bước:\n1. Bấm chọn thư mục chứa các file cần đổi tên.\n2. Xóa chữ rác: Nhập từ cần xóa vào ô "Tìm", bỏ trống ô "Thay thế".\n3. Thêm chữ: Nhập chữ vào ô "Tiền tố" (để thêm vào đầu file) hoặc "Hậu tố" (thêm vào đuôi).\n4. Đánh số: Tích chọn "Tự động đánh số" để file tự động sắp xếp theo thứ tự (01, 02...).\n5. Kiểm tra bảng xem trước (Preview) ở dưới, nếu đúng ý thì bấm "ĐỔI TÊN".',
+  guideUninstallerTitle: '❌ Gỡ Ứng Dụng Sạch (Uninstaller)',
+  guideUninstallerContent: 'Thao tác từng bước:\n1. Mở tab "Gỡ ứng dụng sạch".\n2. Chờ phần mềm quét và load danh sách các ứng dụng đang cài trên máy.\n3. Tìm phần mềm muốn gỡ và bấm vào icon ✕ bên cạnh.\n4. Chọn chế độ "Deep Clean" để hệ thống ép gỡ và truy lùng xóa sạch các file cấu hình rác, Registry còn sót lại.',
+  guideCleanerTitle: '🧹 Dọn Rác Hệ Thống (Cleaner)',
+  guideCleanerContent: 'Thao tác từng bước:\n1. Mở tab "Dọn rác hệ thống".\n2. Tích chọn các vùng bạn muốn dọn (Cache hệ điều hành, rác Trình duyệt, và đặc biệt là file đệm Render khổng lồ của CapCut).\n3. Bấm "QUÉT VÀ DỌN DẸP".\n4. Chờ hệ thống dọn dẹp và trả lại hàng chục GB dung lượng ổ cứng cho bạn.',
+
+  // 👇 DÁN BỔ SUNG 3 DÒNG NÀY VÀO ĐÂY:
+  guideHelpTitle: "Cần hỗ trợ hoặc góp ý phát triển?",
+  guideHelpDesc: "Nếu bạn phát hiện lỗi vặt hoặc có ý tưởng cải tiến tính năng, hãy kết nối trực tiếp với nhà phát triển.",
+  guideFeedbackBtn: "GỬI PHẢN HỒI",
+
   // --- Hộp thoại Onboarding Popups ---
   introIgnore: "Đã hiểu, bỏ qua và không hiển thị lại thông báo này.",
   introStart: "BẮT ĐẦU SỬ DỤNG",
@@ -189,34 +251,6 @@ export const vi: Record<string, string> = {
   introUninstallerDesc: "Khác với trình gỡ cài đặt thông thường, tính năng này sẽ quét sâu vào phân vùng bộ nhớ để tìm và tiêu diệt sạch sẽ các file rác, file cấu hình ẩn, thư mục Cache bị bỏ lại sau khi gỡ app.",
   introCleanerTitle: "Trình Dọn Rác & Cache Hệ Thống",
   introCleanerDesc: "Ổ cứng bị đầy không rõ lý do? Hệ thống sẽ quét qua các thư mục Temp, Cache trình duyệt và đặc biệt là bộ nhớ đệm phình to khổng lồ của TikTok, CapCut để dọn sạch, trả lại hàng chục GB dung lượng cho máy bạn.",
-
-  // ---  Hướng dẫn sử dụng
-  tabGuide: 'Hướng dẫn',
-  descGuide: 'Sổ tay sử dụng & Giải đáp thắc mắc các tính năng.',
-  guideJoinerTitle: '🎬 Nối Video (Video Joiner)',
-  guideJoinerContent: 'Thao tác từng bước:\n1. Bấm vào icon Thư mục ở giữa màn hình để chọn folder chứa các video đầu vào.\n2. Nhập số phút Tối thiểu - Tối đa. App sẽ tự ghép các video để đạt tổng thời lượng này.\n3. (Tùy chọn) Tích chọn "Chứa 1 video dài (Trụ cột)" để lấy video dài nhất làm nòng cốt.\n4. (Tùy chọn) Tích chọn "Dùng GPU Render" để xuất file siêu nhanh bằng Card đồ họa.\n5. Tùy chỉnh "Tỷ lệ khung hình" hoặc chèn "Logo" (nếu cần).\n6. Bấm nút "BẮT ĐẦU VẬN HÀNH" và chờ kết quả.',
-  
-  guideDownloaderTitle: '📥 Tải Video (Downloader)',
-  guideDownloaderContent: 'Thao tác từng bước:\n1. Copy đường link video hoặc Playlist (từ Youtube, TikTok, Facebook...).\n2. Dán link vào thanh địa chỉ của ứng dụng.\n3. (Tùy chọn) Chọn định dạng tải: Giữ nguyên MP4 (để lấy video) hoặc đổi sang MP3 (để lấy nhạc).\n4. (Tùy chọn) Nhập thời gian Bắt đầu / Kết thúc nếu bạn chỉ muốn cắt lấy một đoạn ngắn.\n5. Bấm nút "TẢI XUỐNG".',
-  
-  guideConverterTitle: '⚡ Đổi Đuôi Media (Converter)',
-  guideConverterContent: 'Thao tác từng bước:\n1. Kéo thả các file media vào phần mềm (hoặc bấm chọn thủ công).\n2. Tại ô "Định dạng đích", chọn đuôi bạn muốn đổi sang (ví dụ: MP4, MP3, WEBP...).\n3. (Tùy chọn) Nếu muốn nhúng phụ đề dính chết vào video, bấm "Chọn file Sub" và nạp file .srt hoặc .ass vào.\n4. Bấm "CHUYỂN ĐỔI" để hệ thống dùng GPU xử lý.',
-  
-  guideTtsTitle: '🗣️ Giọng Đọc AI (ElevenLabs)',
-  guideTtsContent: 'Thao tác từng bước:\n1. Vào mục "Cài đặt ⚙️" ở góc trái dưới cùng màn hình.\n2. Dán mã ElevenLabs API Key của bạn vào (Bấm vào link bên dưới ô nhập để lấy mã miễn phí).\n3. Quay lại trang Giọng đọc AI, copy & dán đoạn văn bản bạn cần đọc vào khung trống.\n4. Chọn tên Giọng đọc, kéo thanh trượt "Độ chân thực" (Càng cao đọc càng giống người thật nhưng dễ vấp).\n5. Bấm "TẠO GIỌNG NÓI" để tải file MP3 về máy.',
-  
-  guideRenamerTitle: '📁 Đổi Tên Hàng Loạt (Renamer)',
-  guideRenamerContent: 'Thao tác từng bước:\n1. Bấm chọn thư mục chứa các file cần đổi tên.\n2. Xóa chữ rác: Nhập từ cần xóa vào ô "Tìm", bỏ trống ô "Thay thế".\n3. Thêm chữ: Nhập chữ vào ô "Tiền tố" (để thêm vào đầu file) hoặc "Hậu tố" (thêm vào đuôi).\n4. Đánh số: Tích chọn "Tự động đánh số" để file tự động sắp xếp theo thứ tự (01, 02...).\n5. Kiểm tra bảng xem trước (Preview) ở dưới, nếu đúng ý thì bấm "ĐỔI TÊN".',
-  
-  guideUninstallerTitle: '❌ Gỡ Ứng Dụng Sạch (Uninstaller)',
-  guideUninstallerContent: 'Thao tác từng bước:\n1. Mở tab "Gỡ ứng dụng sạch".\n2. Chờ phần mềm quét và load danh sách các ứng dụng đang cài trên máy.\n3. Tìm phần mềm muốn gỡ và bấm vào icon ✕ bên cạnh.\n4. Chọn chế độ "Deep Clean" để hệ thống ép gỡ và truy lùng xóa sạch các file cấu hình rác, Registry còn sót lại.',
-  
-  guideCleanerTitle: '🧹 Dọn Rác Hệ Thống (Cleaner)',
-  guideCleanerContent: 'Thao tác từng bước:\n1. Mở tab "Dọn rác hệ thống".\n2. Tích chọn các vùng bạn muốn dọn (Cache hệ điều hành, rác Trình duyệt, và đặc biệt là file đệm Render khổng lồ của CapCut).\n3. Bấm "QUÉT VÀ DỌN DẸP".\n4. Chờ hệ thống dọn dẹp và trả lại hàng chục GB dung lượng ổ cứng cho bạn.',
-  
-  guideHelpTitle: 'Bạn cần hỗ trợ thêm?',
-  guideHelpDesc: 'Nếu phần mềm gặp lỗi hoặc bạn có ý tưởng mới, hãy liên hệ tác giả.',
-  guideFeedbackBtn: 'Gửi Phản Hồi',
 
   // --- Cấu hình Cài đặt hệ thống ---
   setMainTitle: "⚙️ Cấu hình Hệ thống",

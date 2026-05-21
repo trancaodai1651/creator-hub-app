@@ -36,3 +36,22 @@ body {
 .custom-scrollbar::-webkit-scrollbar-button {
   display: none;
 }
+
+/* Khung ghim đỉnh đầu dùng để nắm kéo app đi khắp màn hình */
+.window-drag-handle {
+  position: fixed; /* Đổi từ absolute sang fixed để cố định ở đỉnh tuyệt đối */
+  top: 0;
+  left: 0;
+  right: 140px;    /* Chừa lại 140px bên phải để không che cụm nút đóng/thu nhỏ */
+  height: 38px;
+  z-index: 999999; /* Đảm bảo luôn nằm trên cùng */
+  -webkit-app-region: drag; /* Lệnh kích hoạt vùng nắm kéo của Windows */
+  
+  /* ❌ XÓA BỎ HOÀN TOÀN dòng pointer-events: none ở đây đi nhé! */
+}
+
+/* Bẫy chống kéo: Nếu bên dưới vùng kéo có nút bấm nào, phải gán class này để người dùng vẫn click được nút */
+.clickable-zone {
+  -webkit-app-region: no-drag;
+  pointer-events: auto;
+}

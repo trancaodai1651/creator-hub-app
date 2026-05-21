@@ -2,7 +2,7 @@
 import React from 'react'
 
 export const CleanerTab: React.FC<{ clean: any, t: any, colors: any, isDark: boolean }> = ({ clean, t, colors }) => (
-  <div className={`w-full flex-1 border rounded-3xl p-8 flex flex-col gap-6 overflow-hidden ${colors.c_bgPanel}`}>
+  <div className={`w-full flex-1 border rounded-3xl p-8 flex flex-col gap-6 overflow-hidden select-none ${colors.c_bgPanel}`}>
     <div className="flex justify-between items-start">
       <div>
         <h3 className="text-2xl font-bold mb-1 flex items-center gap-2">{t('cleanerTitle')}</h3>

@@ -2,7 +2,7 @@
 import React from 'react'
 
 export const UninstallerTab: React.FC<{ un: any, t: any, colors: any, isDark: boolean, platform: string }> = ({ un, t, colors, isDark, platform }) => (
-  <div className={`w-full flex-1 border rounded-3xl p-8 flex flex-col gap-5 overflow-hidden ${colors.c_bgPanel}`}>
+  <div className={`w-full flex-1 border rounded-3xl p-8 flex flex-col gap-5 overflow-hidden select-none ${colors.c_bgPanel}`}>
     <div className="flex justify-between items-start">
       <div><h3 className="text-2xl font-bold mb-1 flex items-center gap-2">{t('uninsTitle')}</h3><p className={`text-sm ${colors.c_textSub}`}>{t('uninsSub')}</p></div>
       <div className="bg-red-500/10 border border-red-500/30 text-red-500 font-bold px-4 py-2 rounded-xl text-xs">{t('uninsTotal', { count: un.systemApps.length })}</div>

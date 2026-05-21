@@ -18,7 +18,7 @@ export function GuideTab({ t, colors, isDark }: any) {
   ]
 
   return (
-    <div className="w-full max-w-4xl mx-auto flex flex-col h-full animate-fade-in">
+    <div className="w-full max-w-4xl mx-auto flex flex-col h-full animate-fade-in select-none">
       <div className="mb-8">
         <h2 className="text-3xl font-black text-red-500 tracking-wide uppercase flex items-center gap-3">
           <span>📚</span> {t('tabGuide')}

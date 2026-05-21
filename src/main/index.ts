@@ -8,7 +8,7 @@ import icon from '../../resources/icon.png?asset'
 import { execSync } from 'child_process'
 
 // ====================================================================
-// IMPORT CHUẨN ĐỒNG BỘ ĐỦ 8 CHỨC NĂNG CHÍNH + 1 LÕI HỆ THỐNG
+// IMPORT CHUẨN ĐỒNG BỘ ĐỦ 9 CHỨC NĂNG CHÍNH + 1 LÕI HỆ THỐNG
 // ====================================================================
 import { registerSystemHandlers } from './ipc/systemHandlers'
 import { registerJoinerHandlers } from './ipc/joinerHandlers'
@@ -20,6 +20,8 @@ import { registerInstallerHandlers } from './ipc/installerHandlers'
 import { registerUninstallerHandlers } from './ipc/uninstallerHandlers'
 import { registerCleanerHandlers } from './ipc/cleanerHandlers'
 import { registerUpdateHandlers } from './ipc/updateHandlers'
+import { registerChatbotHandlers } from './ipc/chatbotHandlers'
+import { registerPublisherHandlers } from './ipc/publisherHandlers'
 
 // ====================================================================
 // XUẤT KHẨU BIẾN TOÀN CỤC ĐỂ CÁC FILE TRONG THƯ MỤC IPC TRUY XUẤT CHUNG
@@ -73,6 +75,13 @@ function createWindow(): void {
     minHeight: 750,
     show: false,
     autoHideMenuBar: true,
+    // 🚀 BÍ QUYẾT ĐỔI THANH TIÊU ĐỀ NẰM Ở ĐÂY:
+    titleBarStyle: 'hidden', // Giấu thanh tiêu đề thô kệch của hệ điều hành đi
+    titleBarOverlay: {
+      color: '#00000000',      // Đổi màu nền vùng nút bấm trùng khít với màu App (màu Splash/Sidebar của bạn)
+      symbolColor: '#71717a', // Màu của icon dấu trừ, ô vuông và dấu X (màu xám kẽm tinh tế)
+      height: 38             // Chiều cao của thanh tiêu đề mới
+    },
     title: 'CREATOR HUB',
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
@@ -113,6 +122,8 @@ app.whenReady().then(() => {
   registerUninstallerHandlers()
   registerCleanerHandlers()
   registerUpdateHandlers()
+  registerChatbotHandlers()
+  registerPublisherHandlers()
 
   createWindow()
   app.on('activate', function () {

@@ -2,7 +2,7 @@
 import React from 'react'
 
 export const DownloaderTab: React.FC<{ dl: any, t: any, colors: any }> = ({ dl, t, colors }) => (
-  <div className={`w-full flex-1 border rounded-3xl p-8 flex flex-col gap-6 overflow-y-auto ${colors.c_bgPanel}`}>
+  <div className={`w-full flex-1 border rounded-3xl p-8 flex flex-col gap-6 overflow-y-auto select-none ${colors.c_bgPanel}`}>
     <div><h3 className="text-2xl font-bold mb-1 flex items-center gap-2">{t('dlTitle')}</h3><p className={`text-sm ${colors.c_textSub}`}>{t('dlSub')}</p></div>
     <div className="flex flex-col gap-2 w-full"><label className={`text-sm font-medium ${colors.c_textSub}`}>{t('dlLabelUrl')}</label><input type="text" disabled={dl.isDownloading} value={dl.downloadUrl} onChange={(e) => dl.setDownloadUrl(e.target.value)} placeholder="https://www.youtube.com/watch?v=..." className={`w-full border focus:border-red-500 rounded-xl px-4 py-3.5 focus:outline-none ${colors.c_bgInput}`} /></div>
     <div className="grid grid-cols-3 gap-6 w-full">
