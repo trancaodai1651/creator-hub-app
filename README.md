@@ -70,7 +70,7 @@ $ npm install
 # Development
 $ npm run dev
 
-# Buildss
+# Build
 # For windows
 $ npm run build:win
 

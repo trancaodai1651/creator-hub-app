@@ -24,5 +24,6 @@ export const SIDEBAR_TABS: TabItem[] = [
   { id: 'renamer', nameKey: 'fileRenamer', descKey: 'descRenamer', icon: '🗂️', isWip: true },
   { id: 'installer', nameKey: 'appInstaller', descKey: 'descInstaller', icon: '🛠️', isWip: true },
   { id: 'uninstaller', nameKey: 'uninstaller', descKey: 'descUninstaller', icon: '❌', isWip: true },
-  { id: 'cleaner', nameKey: 'cleaner', descKey: 'descCleaner', icon: '🧹', isWip: true }
+  { id: 'cleaner', nameKey: 'cleaner', descKey: 'descCleaner', icon: '🧹', isWip: true },
+  { id: 'guide', icon: '📚', nameKey: 'tabGuide', descKey: 'descGuide' }
 ]

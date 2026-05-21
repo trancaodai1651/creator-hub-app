@@ -6,3 +6,33 @@ body {
   margin: 0;
   padding: 0;
 }
+
+/* ==========================================================
+   TÙY BIẾN THANH CUỘN (SCROLLBAR) HIỆN ĐẠI
+========================================================== */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;  /* Bóp nhỏ thanh cuộn dọc (Chuẩn macOS) */
+  height: 6px; /* Bóp nhỏ thanh cuộn ngang */
+}
+
+/* Nền của thanh cuộn (Track) - Để trong suốt cho tàng hình */
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Cục nắm kéo (Thumb) */
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(128, 128, 128, 0.3); /* Màu xám mờ (Hợp cả Dark & Light mode) */
+  border-radius: 10px; /* Bo tròn tuyệt đối */
+  transition: background-color 0.3s ease;
+}
+
+/* Hiệu ứng khi rê chuột vào cục kéo */
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: #ef4444; /* Phát sáng màu đỏ chủ đạo của app */
+}
+
+/* Ẩn hoàn toàn 2 nút mũi tên lên/xuống cổ lỗ sĩ của Windows */
+.custom-scrollbar::-webkit-scrollbar-button {
+  display: none;
+}

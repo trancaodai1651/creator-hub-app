@@ -6,13 +6,64 @@ import { exec, spawn } from 'child_process'
 
 export function registerUpdateHandlers() {
   
+  // =========================================================
+  // 1. KIỂM TRA PHIÊN BẢN TỪ GITHUB RELEASES
+  // =========================================================
+  ipcMain.handle('check-for-updates', async () => {
+    try {
+      // Gọi API công khai của GitHub để lấy bản Release mới nhất
+      // Thay 'trancaodai1651/creator-hub-app' bằng đúng Username/Repo của bạn
+      const response = await fetch('https://api.github.com/repos/trancaodai1651/creator-hub-app/releases/latest');
+      
+      if (!response.ok) {
+        throw new Error('Không thể kết nối đến GitHub API');
+      }
+
+      const releaseData = await response.json();
+      const latestVersion = releaseData.tag_name.replace('v', ''); // Lấy "1.1.1" từ "v1.1.1"
+      const currentVersion = app.getVersion();
+
+      // Nếu phát hiện phiên bản trên mạng lớn hơn phiên bản hiện tại
+      if (latestVersion !== currentVersion) {
+        // Tìm file cài đặt tương ứng với hệ điều hành hiện tại
+        let asset;
+        if (process.platform === 'win32') {
+          asset = releaseData.assets.find((a: any) => a.name.endsWith('.exe'));
+        } else if (process.platform === 'darwin') {
+          asset = releaseData.assets.find((a: any) => a.name.endsWith('.zip'));
+        }
+
+        if (asset) {
+          return {
+            hasUpdate: true,
+            latestVersion: latestVersion,
+            currentVersion: currentVersion,
+            releaseNotes: releaseData.body || 'Bản cập nhật tối ưu hóa hiệu suất và sửa lỗi hệ thống.',
+            downloadUrl: asset.browser_download_url,
+            fileName: asset.name
+          };
+        }
+      }
+
+      // Nếu không có bản mới hoặc không tìm thấy file cài phù hợp
+      return { hasUpdate: false, currentVersion: currentVersion };
+
+    } catch (error: any) {
+      console.error('Lỗi check update:', error);
+      return { error: true, message: error.message };
+    }
+  });
+
+  // =========================================================
+  // 2. KÍCH HOẠT TẢI XUỐNG VÀ CÀI ĐẶT
+  // =========================================================
   ipcMain.handle('trigger-auto-update', async (event, { downloadUrl, fileName, language }: any) => {
     try {
       const isVi = language !== 'en'
       const tempDir = app.getPath('temp')
       const tempDownloadPath = path.join(tempDir, fileName)
       
-      // 1. TẢI FILE TỪ GITHUB
+      // TẢI FILE TỪ GITHUB
       const response = await (globalThis as any).fetch(downloadUrl)
       if (!response.ok) throw new Error(isVi ? 'Không thể kết nối máy chủ GitHub!' : 'Cannot connect to GitHub servers!')
       
@@ -76,7 +127,7 @@ export function registerUpdateHandlers() {
           const newAppPath = path.join(extractPath, appFolder)
           
           // Lấy đường dẫn của ứng dụng đang chạy (VD: /Applications/Creator Hub.app)
-          const currentExe = app.getPath('exe') // Sẽ trả về /Applications/Creator Hub.app/Contents/MacOS/Creator Hub
+          const currentExe = app.getPath('exe')
           const currentAppPath = currentExe.substring(0, currentExe.indexOf('.app') + 4)
 
           event.sender.send('update-progress', { message: isVi ? 'Đang hoán đổi dữ liệu ứng dụng...' : 'Applying update...', percent: 100 })
@@ -85,27 +136,15 @@ export function registerUpdateHandlers() {
           const scriptPath = path.join(tempDir, 'update_mac.sh')
           const scriptContent = `
 #!/bin/bash
-# Đợi 2 giây cho ứng dụng hiện tại thoát hoàn toàn
 sleep 2
-
-# Xóa bản cũ
 rm -rf "${currentAppPath}"
-
-# Copy bản mới vào vị trí cũ
 cp -R "${newAppPath}" "${currentAppPath}"
-
-# Mở lại phần mềm
 open "${currentAppPath}"
           `.trim()
 
-          // Cấp quyền thực thi cho Script
           fs.writeFileSync(scriptPath, scriptContent, { mode: 0o755 })
-
-          // Chạy Script ngầm (tách biệt hoàn toàn khỏi vòng đời của Electron)
           const child = spawn('bash', [scriptPath], { detached: true, stdio: 'ignore' })
           child.unref()
-
-          // Đóng ứng dụng hiện tại để Bash Script làm việc
           setTimeout(() => { app.quit() }, 500)
         })
       }
