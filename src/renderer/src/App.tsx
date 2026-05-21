@@ -81,7 +81,7 @@ export default function App() {
   const un = useUninstaller(t, setCustomModal, activeTab)
   const clean = useCleaner(t, setCustomModal, activeTab)
   const chat = useChatbot(t, setCustomModal, groqKey) // Đã được đưa vào trong hàm App()
-  const pub = usePublisher(t, setCustomModal)
+  const pub = usePublisher(setCustomModal)
 
   useEffect(() => {
     window.electron.ipcRenderer.invoke('get-platform').then((res: string) => setPlatform(res))

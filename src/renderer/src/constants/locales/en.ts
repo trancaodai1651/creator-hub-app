@@ -27,7 +27,7 @@ export const en: Record<string, string> = {
   btnCancel: "🛑 CANCEL",
   btnPause: "⏸ PAUSE",
   btnResume: "▶ RESUME",
-  modalConfirm: "CONFIRM (OK)",
+  modalConfirm: "CONFIRM",
   
   descJoiner: "Quickly merge multiple video files into a single complete file.",
   descDownloader: "Download high-quality videos from social media platforms.",

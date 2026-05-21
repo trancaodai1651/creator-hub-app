@@ -28,7 +28,7 @@ export const vi: Record<string, string> = {
   btnCancel: "🛑 HỦY BỎ",
   btnPause: "⏸ TẠM DỪNG",
   btnResume: "▶ TIẾP TỤC",
-  modalConfirm: "XÁC NHẬN (OK)",
+  modalConfirm: "XÁC NHẬN",
 
   // --- Mô tả ngoài trang chủ Bento Grid ---
   descJoiner: "Ghép nối nhiều tệp video thành một tệp hoàn chỉnh một cách nhanh chóng.",

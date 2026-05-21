@@ -1,0 +1,37 @@
+name: Đóng gói và Phát hành đa nền tảng
+
+on:
+  push:
+    tags:
+      - 'v*' # Quy trình sẽ tự kích hoạt khi bạn tạo một tag phiên bản (VD: v1.0.0)
+
+jobs:
+  release:
+    name: Build và Đẩy lên GitHub Releases
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [windows-latest, macos-latest] # Kích hoạt cùng lúc 2 máy chủ ảo Windows và Mac
+
+    steps:
+      - name: Kiểm tra mã nguồn
+        uses: actions/checkout@v4
+
+      - name: Thiết lập môi trường Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Cài đặt Dependencies
+        run: npm ci
+
+      - name: Biên dịch ứng dụng (Build Code)
+        run: npm run build
+
+      - name: Đóng gói và Tự động Publish file cài đặt
+        uses: samuelmeuli/action-electron-builder@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }} # Quyền bảo mật tự động của GitHub Actions
+          release: true
