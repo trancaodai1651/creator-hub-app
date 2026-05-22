@@ -88,13 +88,14 @@ export async function publishTikTok(browser: Browser, config: any, replyLog: (ms
     await page.keyboard.press('Enter'); 
     await new Promise(r => setTimeout(r, 500));
 
+    // 🚀 ĐÃ SỬA LỖI HASHTAG XUỐNG DÒNG: Chỉ dùng Space để khóa thẻ, không dùng Enter
     if (metadata.hashtags) {
       const tags = metadata.hashtags.split(/[\s,]+/).map((t: string) => t.trim()).filter((t: string) => t.length > 0);
       for (const tag of tags) {
         const cleanTag = tag.startsWith('#') ? tag : `#${tag}`;
-        await page.keyboard.type(cleanTag + ' ', { delay: 30 });
-        await new Promise(r => setTimeout(r, 1500)); 
-        await page.keyboard.press('Enter'); 
+        await page.keyboard.type(cleanTag, { delay: 30 }); // Chỉ gõ chữ
+        await new Promise(r => setTimeout(r, 1000)); // Đợi gợi ý nháy lên
+        await page.keyboard.press('Space'); // Bấm Space để chốt thẻ xanh ngang hàng
         await new Promise(r => setTimeout(r, 500));
       }
     }

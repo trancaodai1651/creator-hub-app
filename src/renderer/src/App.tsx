@@ -80,8 +80,11 @@ export default function App() {
   const ins = useInstaller(t, setCustomModal)
   const un = useUninstaller(t, setCustomModal, activeTab)
   const clean = useCleaner(t, setCustomModal, activeTab)
-  const chat = useChatbot(t, setCustomModal, groqKey) // Đã được đưa vào trong hàm App()
+  const chat = useChatbot(t, setCustomModal, groqKey) 
+  
+  // 🚀 ĐÂY LÀ "BỘ NÃO" CỦA PUBLISHER ĐÃ ĐƯỢC NÂNG CẤP BÊN TRONG (Gộp chung với Queue)
   const pub = usePublisher(setCustomModal)
+  
 
   useEffect(() => {
     window.electron.ipcRenderer.invoke('get-platform').then((res: string) => setPlatform(res))
@@ -114,7 +117,6 @@ export default function App() {
         })
       }
 
-      // Xử lý thông minh: Thêm cơ chế Timeout tránh treo App nếu Backend không có Handler
       const result: any = await Promise.race([
         (window as any).electron.ipcRenderer.invoke('check-for-updates'),
         new Promise((_, reject) => setTimeout(() => reject(new Error('TIMEOUT_NO_HANDLER')), 3000))
@@ -160,7 +162,6 @@ Vui lòng bấm OK để hệ thống tiến hành tự động tải về phiê
     } catch (err: any) {
       console.warn("Lỗi kiểm tra cập nhật (Bỏ qua nếu đang ở môi trường Dev):", err.message);
       if (isManual) {
-        // Bắt lỗi cụ thể để báo lại cho người dùng
         let errorMsg = err.message;
         if (errorMsg.includes('No handler registered') || errorMsg.includes('TIMEOUT')) {
            errorMsg = "Tính năng tự động cập nhật đang chạy ở chế độ Phát triển (Dev Mode) hoặc Core Backend chưa được cấu hình. Tính năng này chỉ hoạt động khi bạn Build ra file cài đặt (.exe / .app) !";
@@ -236,10 +237,8 @@ Vui lòng bấm OK để hệ thống tiến hành tự động tải về phiê
       {/* SIDEBAR NAVIGATION (Ẩn khi ở tab Dashboard)*/}
       {/* ========================================== */}
       {activeTab !== 'home' && (
-        // 👇 TÍCH HỢP ĐỒNG THỜI QUYỀN KÉO THẢ (drag) VÀ KHÓA BÔI XANH (select-none) CHO SIDEBAR
         <aside className={`w-80 flex flex-col p-6 shrink-0 border-r select-none ${colors.c_bgPanel}`} style={{ WebkitAppRegion: 'drag' } as any}>
           <div className="mb-10 select-none flex items-center gap-3">
-            {/* 🚀 KHỐI LOGO VECTOR SVG */}
             <div className="w-11 h-11 shrink-0">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" className="w-full h-full drop-shadow-md">
                 <defs>
@@ -259,7 +258,6 @@ Vui lòng bấm OK để hệ thống tiến hành tự động tải về phiê
               </svg>
             </div>
             
-            {/* TÊN ỨNG DỤNG & VERSION */}
             <div className="flex flex-col justify-center">
               <h1 className="text-[22px] font-black bg-clip-text text-transparent bg-gradient-to-r from-red-500 to-orange-400 tracking-wide leading-none">
                 CREATOR HUB
@@ -277,7 +275,7 @@ Vui lòng bấm OK để hệ thống tiến hành tự động tải về phiê
                 <button 
                   key={tab.id} 
                   onClick={() => setActiveTab(tab.id)} 
-                  style={{ WebkitAppRegion: 'no-drag' } as any} // Trả lại quyền click cho nút bấm
+                  style={{ WebkitAppRegion: 'no-drag' } as any}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all relative overflow-hidden ${
                     isActive 
                       ? 'bg-red-500 text-white shadow-md' 
@@ -302,7 +300,7 @@ Vui lòng bấm OK để hệ thống tiến hành tự động tải về phiê
           <div className="mt-auto">
             <button 
               onClick={() => setActiveTab('settings')} 
-              style={{ WebkitAppRegion: 'no-drag' } as any} // Trả lại quyền click cho nút Settings
+              style={{ WebkitAppRegion: 'no-drag' } as any}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${activeTab === 'settings' ? 'bg-red-500 text-white' : 'text-zinc-500 hover:bg-[#262626]'}`}
             >
               ⚙️ <span>{t('settings')}</span>
@@ -316,7 +314,6 @@ Vui lòng bấm OK để hệ thống tiến hành tự động tải về phiê
       {/* ========================================== */}
       <main className={`flex-1 p-5 md:p-10 flex flex-col h-screen overflow-hidden relative ${activeTab === 'home' ? 'max-w-[1400px] mx-auto w-full' : ''}`}>
 
-        {/* 🎨 CSS nội bộ cho hiệu ứng xuất hiện mượt mà */}
         <style>{`
           @keyframes fadeInUp {
             from { opacity: 0; transform: translateY(30px) scale(0.95); }
@@ -327,13 +324,9 @@ Vui lòng bấm OK để hệ thống tiến hành tự động tải về phiê
           }
         `}</style>
 
-        {/* ========================================== */}
-        {/* HEADER TÙY BIẾN (CHỈ HIỂN THỊ Ở TRANG CHỦ)   */}
-        {/* ========================================== */}
         {activeTab === 'home' && (
-          // 👇 KHÓA BÔI XANH CHO TOÀN BỘ HEADER TRANG CHỦ
           <header className="w-full flex justify-between items-center mb-6 md:mb-10 mt-2 shrink-0 px-2 md:px-4 opacity-0 animate-fade-in-up select-none">
-            <div className="w-10 md:w-14"></div> {/* Spacer */}
+            <div className="w-10 md:w-14"></div> 
             
             <div className="flex flex-col items-center text-center">
               <h2 className="text-3xl md:text-[40px] font-black bg-clip-text text-transparent bg-gradient-to-r from-red-500 to-orange-400 drop-shadow-sm tracking-tight leading-tight">
@@ -344,10 +337,9 @@ Vui lòng bấm OK để hệ thống tiến hành tự động tải về phiê
               </p>
             </div>
             
-            {/* NÚT CÀI ĐẶT TRÊN DASHBOARD */}
             <button
               onClick={() => setActiveTab('settings')}
-              style={{ WebkitAppRegion: 'no-drag' } as any} // Đảm bảo nút click được
+              style={{ WebkitAppRegion: 'no-drag' } as any}
               className={`group flex items-center justify-center w-10 h-10 md:w-14 md:h-14 rounded-xl md:rounded-2xl border transition-all duration-300 hover:scale-110 active:scale-95 shadow-sm hover:shadow-[0_0_20px_rgba(239,68,68,0.3)] ${isDark ? 'bg-[#1a1a1a] border-zinc-800 hover:border-red-500/50' : 'bg-white border-zinc-200 hover:border-red-400'}`}
               title="Cài đặt hệ thống"
             >
@@ -356,12 +348,8 @@ Vui lòng bấm OK để hệ thống tiến hành tự động tải về phiê
           </header>
         )}
 
-        {/* ========================================== */}
-        {/* GRID TÍNH NĂNG (GÓI GỌN TRONG THANH CUỘN ĐỂ RESPONSIVE) */}
-        {/* ========================================== */}
         {activeTab === 'home' && (
           <>
-            {/* Khu vực cuộn dành riêng cho danh sách thẻ tính năng */}
             <div className="flex-1 w-full overflow-y-auto custom-scrollbar pr-2 pb-2 flex flex-col">
               <div className="grid grid-cols-[repeat(auto-fit,minmax(280px,1fr))] gap-5 md:gap-7 w-full p-2">
                 {SIDEBAR_TABS.filter((tab: any) => tab.id !== 'home').map((tab: any, index: number) => (
@@ -375,7 +363,6 @@ Vui lòng bấm OK để hệ thống tiến hành tự động tải về phiê
                     } hover:-translate-y-2 hover:shadow-[0_20px_40px_-15px_rgba(239,68,68,0.25)] hover:border-red-500/50`}
                     style={{ animationDelay: `${index * 50}ms` }}
                   >
-                    {/* Gradient Hover */}
                     <div className="absolute inset-0 bg-gradient-to-br from-red-500/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
 
                     <div className="flex justify-between items-start relative z-10">
@@ -403,7 +390,6 @@ Vui lòng bấm OK để hệ thống tiến hành tự động tải về phiê
               </div>
             </div>
 
-            {/* CHỮ KÝ CÁ NHÂN */}
             <div className="shrink-0 pt-6 pb-2 w-full flex justify-center items-center opacity-0 animate-fade-in-up select-none" style={{ animationDelay: '600ms' }}>
               <div className={`flex items-center gap-4 px-6 md:px-8 py-2 md:py-3 rounded-full border backdrop-blur-md shadow-sm ${isDark ? 'bg-zinc-900/40 border-zinc-800/50' : 'bg-white/50 border-zinc-200'}`}>
                 <span className="w-4 md:w-8 h-[1px] bg-gradient-to-r from-transparent to-zinc-500"></span>
@@ -434,7 +420,10 @@ Vui lòng bấm OK để hệ thống tiến hành tự động tải về phiê
             {activeTab === 'uninstaller' && <UninstallerTab un={un} t={t} colors={colors} isDark={isDark} platform={platform} />}
             {activeTab === 'cleaner' && <CleanerTab clean={clean} t={t} colors={colors} isDark={isDark} />}
             {activeTab === 'chatbot' && <ChatbotTab chat={chat} t={t} colors={colors} isDark={isDark} />}
+            
+            {/* 🚀 ĐÂY CHÍNH LÀ NƠI DỮ LIỆU ĐƯỢC BƠM VÀO TAB PUBLISHER TRÊN GIAO DIỆN */}
             {activeTab === 'publisher' && <PublisherTab publisher={pub} t={t} colors={colors} isDark={isDark} />}
+            
             {activeTab === 'guide' && <GuideTab t={t} colors={colors} isDark={isDark} />}
             {activeTab === 'settings' && <SettingsTab cfg={{ language, setLanguage, themeSetting, setThemeSetting, groqKey, setGroqKey, elevenKey, setElevenKey }} t={t} colors={colors} isDark={isDark} onCheckUpdate={() => handleCheckUpdate(true)} />}
           </div>

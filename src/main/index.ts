@@ -1,5 +1,5 @@
 /* eslint-disable */
-import { app, shell, BrowserWindow } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import * as fs from 'fs'
@@ -65,6 +65,25 @@ if (isWin) {
 }
 
 // ====================================================================
+// ĐĂNG KÝ CỔNG IPC MỞ CỬA SỔ CHỌN FILE (NATIVE DIALOG)
+// ====================================================================
+ipcMain.handle('select-multiple-videos', async () => {
+  const { canceled, filePaths } = await dialog.showOpenDialog({
+    title: 'Chọn Video Cần Đăng (Có thể chọn nhiều)',
+    properties: ['openFile', 'multiSelections'], // Cho phép bôi đen chọn hàng loạt file
+    filters: [{ name: 'Videos', extensions: ['mp4', 'mov', 'm4v'] }]
+  });
+
+  if (canceled) return [];
+
+  // Trả về thẳng đường dẫn gốc tuyệt đối cho Frontend
+  return filePaths.map(filePath => ({
+    name: path.basename(filePath),
+    path: filePath
+  }));
+});
+
+// ====================================================================
 // KHỞI TẠO CỬA SỔ GIAO DIỆN KHUNG ỨNG DỤNG (WINDOW INITIALIZATION)
 // ====================================================================
 function createWindow(): void {
@@ -75,12 +94,11 @@ function createWindow(): void {
     minHeight: 750,
     show: false,
     autoHideMenuBar: true,
-    // 🚀 BÍ QUYẾT ĐỔI THANH TIÊU ĐỀ NẰM Ở ĐÂY:
-    titleBarStyle: 'hidden', // Giấu thanh tiêu đề thô kệch của hệ điều hành đi
+    titleBarStyle: 'hidden', 
     titleBarOverlay: {
-      color: '#00000000',      // Đổi màu nền vùng nút bấm trùng khít với màu App (màu Splash/Sidebar của bạn)
-      symbolColor: '#71717a', // Màu của icon dấu trừ, ô vuông và dấu X (màu xám kẽm tinh tế)
-      height: 38             // Chiều cao của thanh tiêu đề mới
+      color: '#00000000',      
+      symbolColor: '#71717a', 
+      height: 38             
     },
     title: 'CREATOR HUB',
     ...(process.platform === 'linux' ? { icon } : {}),
