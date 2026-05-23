@@ -1,7 +1,7 @@
 /* eslint-disable */
 import { useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import { VideoTask, Platform, TaskStatus } from '../types/video';
+import { VideoTask, TaskStatus } from '../types/video';
 
 export function useVideoQueue() {
   const [videoQueue, setVideoQueue] = useState<VideoTask[]>([]);
