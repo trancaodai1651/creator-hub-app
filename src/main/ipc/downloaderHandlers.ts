@@ -33,7 +33,6 @@ export function registerDownloaderHandlers() {
       const YTDlpWrapClass = (YTDlpWrap as any).default || YTDlpWrap;
       const ytdlpWrap = new YTDlpWrapClass(ytdlpBinaryPath);
       
-      // 🚀 BÍ QUYẾT: Dùng execPromise + '--dump-single-json' để ép dữ liệu thành 1 khối an toàn tuyệt đối
       const stdout = await ytdlpWrap.execPromise([url, '--dump-single-json', '--flat-playlist']);
       const metadata = JSON.parse(stdout);
       
@@ -156,7 +155,7 @@ export function registerDownloaderHandlers() {
 
 
   // =======================================================================
-  // 🚀 API: TÌM KIẾM VIDEO (ĐÃ FIX LỖI "MAP IS NOT A FUNCTION")
+  // 🚀 API: TÌM KIẾM VIDEO BẰNG TỪ KHÓA
   // =======================================================================
   ipcMain.handle('search-video', async (_event, { keyword, limit = 10 }: any) => {
     try {
@@ -165,7 +164,6 @@ export function registerDownloaderHandlers() {
       
       const searchStr = `ytsearch${limit}:${keyword}`;
       
-      // 🚀 BÍ QUYẾT: Dùng cờ --dump-single-json để ép kết quả thành 1 Object chuẩn chỉ duy nhất
       const stdout = await ytdlpWrap.execPromise([searchStr, '--dump-single-json', '--flat-playlist']);
       const metadata = JSON.parse(stdout);
       
@@ -175,7 +173,7 @@ export function registerDownloaderHandlers() {
           title: e.title,
           url: e.url || e.webpage_url || `https://www.youtube.com/watch?v=${e.id}`,
           thumbnail: e.thumbnails?.[0]?.url || e.thumbnail || (e.id ? `https://i.ytimg.com/vi/${e.id}/hqdefault.jpg` : ''),
-          // Tính toán số phút (Duration) nếu hệ thống không tự trả về
+          // Trả về thời lượng video (nếu có)
           duration: e.duration_string || (e.duration ? new Date(e.duration * 1000).toISOString().substring(14, 19) : 'N/A'),
           channel: e.uploader || e.channel || 'YouTube'
         }));

@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 
 export function GuideTab({ t, colors, isDark }: any) {
   const [activeFaq, setActiveFaq] = useState<number | null>(0)

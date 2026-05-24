@@ -2,8 +2,9 @@
   "extends": "@electron-toolkit/tsconfig/tsconfig.web.json",
   "include": ["src/renderer/src/**/*"],
   "compilerOptions": {
+    "noUnusedLocals": false,
     "paths": {
-      "@renderer/*": ["./src/renderer/src/*"] // <--- ĐÃ SỬA: Thêm ./ vào đầu đường dẫn này
+      "@renderer/*": ["./src/renderer/src/*"], // <--- ĐÃ SỬA: Thêm ./ vào đầu đường dẫn này
     }
   }
 }

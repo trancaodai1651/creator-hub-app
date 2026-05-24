@@ -30,6 +30,10 @@ export let ffmpegPath: string = ''
 export let ffprobePath: string = ''
 export let videoEncoder: string = 'libx264' 
 
+// 🚀 ÉP ELECTRON/CHROMIUM IM LẶNG: Chỉ in log khi App bị sập (Crash), bỏ qua toàn bộ cảnh báo menu vặt vẹo của macOS
+app.commandLine.appendSwitch('log-level', '3');
+app.commandLine.appendSwitch('disable-features', 'TouchBar,VisualDebugger');
+
 const getBinaryPath = (packageName: string, binaryName: string, subPath: string = ''): string => {
   const isDev = !app.isPackaged
   const rootDir = isDev ? app.getAppPath() : app.getAppPath().replace('app.asar', 'app.asar.unpacked')

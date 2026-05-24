@@ -1,5 +1,5 @@
 /* eslint-disable */
-import React, { useEffect, useRef } from 'react'
+import { useEffect, useRef } from 'react'
 
 const GROQ_MODELS = [
   { id: 'llama-3.3-70b-versatile', nameKey: 'model_llama33' },

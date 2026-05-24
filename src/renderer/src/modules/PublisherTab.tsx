@@ -1,5 +1,4 @@
 /* eslint-disable */
-import React from 'react'
 
 export function PublisherTab({ publisher, t, isDark }: any) {
   const selectedVideo = publisher.videoQueue?.find((v: any) => v.id === publisher.selectedVideoId);

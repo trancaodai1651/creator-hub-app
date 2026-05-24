@@ -17,13 +17,13 @@
     "postinstall": "electron-builder install-app-deps",
     "build:unpack": "npm run build && electron-builder --dir",
     "build:win": "npm run build && electron-builder --win",
-    "build:mac": "electron-vite build && electron-builder --mac",
-    "build:linux": "electron-vite build && electron-builder --linux"
+    "build:mac": "npm run build && electron-builder --mac --x64",
+    "build:mac:arm": "npm run build && electron-builder --mac --arm64",
+    "build:linux": "npm run build && electron-builder --linux"
   },
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.2",
     "@electron-toolkit/utils": "^4.0.0",
-    "@tailwindcss/vite": "^4.3.0",
     "electron-updater": "^6.8.3",
     "ffmpeg-static": "^5.3.0",
     "ffprobe-static": "^3.1.0",
@@ -37,6 +37,7 @@
     "@electron-toolkit/eslint-config-prettier": "^3.0.0",
     "@electron-toolkit/eslint-config-ts": "^3.1.0",
     "@electron-toolkit/tsconfig": "^2.0.0",
+    "@tailwindcss/vite": "^4.3.0",
     "@types/fluent-ffmpeg": "^2.1.28",
     "@types/node": "^22.19.1",
     "@types/react": "^19.2.7",
@@ -63,9 +64,17 @@
   "build": {
     "appId": "com.tcd.creatorhub",
     "productName": "Creator Hub",
+    "compression": "store",
     "asarUnpack": [
       "**/node_modules/ffmpeg-static/**/*",
       "**/node_modules/ffprobe-static/**/*"
+    ],
+    "files": [
+      "out/**/*",
+      "dist/**/*",
+      "!node_modules/@tailwindcss{,/**/*}",
+      "!node_modules/@tailwindcss/oxide-darwin-x64{,/**/*}",
+      "!node_modules/@tailwindcss/oxide-darwin-arm64{,/**/*}"
     ],
     "directories": {
       "output": "dist"
@@ -89,7 +98,7 @@
     },
     "mac": {
       "target": [
-        "zip"
+        "dmg"
       ],
       "category": "public.app-category.video"
     }
