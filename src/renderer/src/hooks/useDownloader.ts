@@ -8,10 +8,10 @@ export interface DownloadTask {
   status: 'idle' | 'fetching' | 'downloading' | 'success' | 'error';
   percent: number; msgKey: string;
   startMin: string; startSec: string;
-  endMin: string; endSec: string;
+  endMin: string; endSec: string;   
   availableResolutions: string[]; selectedResolution: string;
   platform: { name: string, bg: string, text: string }; 
-  isLight: boolean;
+  isLight: boolean; 
   localPath?: string;
 }
 
@@ -29,7 +29,7 @@ const getPlatformData = (url: string) => {
 export function useDownloader(t: any, setCustomModal: any) {
   const [queue, setQueue] = useState<DownloadTask[]>([])
   const [downloadFolder, setDownloadFolder] = useState('')
-  const [highBitrate, setHighBitrate] = useState(true) // 🚀 Mặc định bật Bitrate cao Pro
+  const [fastMode, setFastMode] = useState(true) 
   const [isProcessing, setIsProcessing] = useState(false)
 
   const [searchInput, setSearchInput] = useState('');
@@ -75,24 +75,34 @@ export function useDownloader(t: any, setCustomModal: any) {
       return;
     }
     
-    setIsSearching(true); setShowSearchModal(true); setSearchResults([]);
+    setIsSearching(true);
+    setShowSearchModal(true);
+    setSearchResults([]);
+    
     try {
       const res: any = await invoke('search_video', { keyword: query.trim(), limit: 10 });
-      if (res.success) { setSearchResults(res.results); } 
-      else { setCustomModal({ show: true, title: 'Lỗi Tìm Kiếm', message: res.message }); setShowSearchModal(false); }
+      if (res.success) {
+        setSearchResults(res.results);
+      } else {
+        setCustomModal({ show: true, title: 'Lỗi Tìm Kiếm', message: res.message });
+        setShowSearchModal(false);
+      }
     } catch (err: any) {
-      setCustomModal({ show: true, title: 'Lỗi Hệ Thống', message: String(err) }); setShowSearchModal(false);
-    } finally { setIsSearching(false); }
+      setCustomModal({ show: true, title: 'Lỗi Hệ Thống', message: String(err) });
+      setShowSearchModal(false);
+    } finally {
+      setIsSearching(false);
+    }
   }
 
   const addVideoToQueue = async (targetUrl: string) => {
     const tempId = crypto.randomUUID();
     setQueue(prev => [...prev, { 
-      id: tempId, url: targetUrl, title: t('dl_msg_fetching_preview') || 'Đang nạp thông tin video...', 
-      thumbnail: '', status: 'fetching', percent: 0, msgKey: '', 
-      startMin: '', startSec: '', endMin: '', endSec: '',
+      id: tempId, url: targetUrl, title: 'Đang nạp thông tin video...', 
+      thumbnail: '', status: 'fetching', percent: 0, msgKey: 'dl_msg_fetching_preview', 
+      startMin: '', startSec: '', endMin: '', endSec: '', 
       availableResolutions: ['best'], selectedResolution: 'best', platform: getPlatformData(targetUrl),
-      isLight: !highBitrate
+      isLight: fastMode
     }])
 
     try {
@@ -101,23 +111,23 @@ export function useDownloader(t: any, setCustomModal: any) {
         setQueue(prev => prev.filter(t => t.id !== tempId));
         const playlistTasks: DownloadTask[] = info.entries.map((entry: any) => ({
           id: crypto.randomUUID(), url: entry.url, title: entry.title, thumbnail: entry.thumbnail,
-          status: 'idle', percent: 0, msgKey: '', startMin: '', startSec: '', endMin: '', endSec: '',
+          status: 'idle', percent: 0, msgKey: 'dlStatusIdle', startMin: '', startSec: '', endMin: '', endSec: '',
           availableResolutions: entry.availableResolutions || ['best'], selectedResolution: 'best', 
-          platform: getPlatformData(entry.url), isLight: !highBitrate
+          platform: getPlatformData(entry.url), isLight: fastMode
         }));
         setQueue(prev => [...prev, ...playlistTasks]);
       } else {
         setQueue(prev => prev.map(task => {
           if (task.id === tempId) {
             return info.success 
-              ? { ...task, status: 'idle', title: info.title, thumbnail: info.thumbnail, availableResolutions: info.availableResolutions || ['best'] } 
-              : { ...task, title: 'Lỗi không lấy được thông tin video hoặc link bảo mật', status: 'error' }
+              ? { ...task, status: 'idle', msgKey: 'dlStatusIdle', title: info.title, thumbnail: info.thumbnail, availableResolutions: info.availableResolutions || ['best'] } 
+              : { ...task, title: 'Lỗi không lấy được thông tin video hoặc link bảo mật', status: 'error', msgKey: 'dl_msg_error' }
           }
           return task;
         }))
       }
     } catch (error) {
-      setQueue(prev => prev.map(task => task.id === tempId ? { ...task, title: 'Lỗi kết nối lõi tải xuống', status: 'error' } : task));
+      setQueue(prev => prev.map(task => task.id === tempId ? { ...task, title: 'Lỗi kết nối máy chủ tải', status: 'error', msgKey: 'dl_msg_error' } : task));
     }
   }
 
@@ -125,21 +135,17 @@ export function useDownloader(t: any, setCustomModal: any) {
     try {
       const text = await navigator.clipboard.readText();
       if (!text || !text.trim().startsWith('http')) { 
-        alert("Bộ nhớ tạm (Clipboard) không chứa đường link video hợp lệ!"); return; 
+        alert("Bộ nhớ tạm không chứa liên kết video hợp lệ!"); 
+        return; 
       }
       addVideoToQueue(text.trim());
-    } catch (err) { alert("Ứng dụng không xin được quyền đọc Clipboard của hệ thống!"); }
+    } catch (err) { 
+      alert("Không lấy được quyền truy cập bộ nhớ tạm hệ thống!"); 
+    }
   }
 
-  // 🚀 ĐỒNG BỘ CÔNG TẮC: Khi gạt nút tổng, ép hàng loạt nút con bật theo
-  const toggleGlobalHighBitrate = (val: boolean) => {
-    setHighBitrate(val);
-    setQueue(prev => prev.map(task => {
-      if (task.status === 'idle' || task.status === 'error') {
-        return { ...task, isLight: !val }; 
-      }
-      return task;
-    }));
+  const toggleGlobalFastMode = (val: boolean) => {
+    setFastMode(val);
   }
 
   const setTaskResolution = (id: string, res: string) => { setQueue(prev => prev.map(t => t.id === id ? { ...t, selectedResolution: res } : t)) }
@@ -148,23 +154,35 @@ export function useDownloader(t: any, setCustomModal: any) {
   const setTaskEndMin = (id: string, val: string) => { setQueue(prev => prev.map(t => t.id === id ? { ...t, endMin: val } : t)) }
   const setTaskEndSec = (id: string, val: string) => { setQueue(prev => prev.map(t => t.id === id ? { ...t, endSec: val } : t)) }
   const setTaskIsLight = (id: string, val: boolean) => { setQueue(prev => prev.map(t => t.id === id ? { ...t, isLight: val } : t)) }
-  const removeTask = (id: string) => { setQueue(prev => prev.filter(t => t.id !== id)) }
+  
+  const removeTask = (id: string) => { if(!isProcessing) setQueue(prev => prev.filter(t => t.id !== id)) }
+
+  // 🚀 TÍNH NĂNG MỚI: XÓA TOÀN BỘ DANH SÁCH
+  const handleClearQueue = () => {
+    if (isProcessing) return;
+    if (queue.length === 0) return;
+    
+    // Popup Native xác nhận hành động
+    const isConfirmed = window.confirm(t('dlConfirmClear') || 'Bạn có chắc chắn muốn xóa toàn bộ danh sách chờ không?');
+    if (isConfirmed) {
+      setQueue([]);
+    }
+  }
 
   const handleStartBatch = async () => {
     if (isProcessing) return;
-
     setIsProcessing(true);
     isRunningRef.current = true;
     let successCount = 0;
     let totalTasksRun = 0;
-
+    
     while (isRunningRef.current) {
       const nextTask = queueRef.current.find(t => t.status === 'idle' || t.status === 'error');
       if (!nextTask) break;
 
       totalTasksRun++;
       setQueue(prev => prev.map(t => t.id === nextTask.id ? { ...t, status: 'downloading', percent: 0, msgKey: 'dl_msg_starting' } : t));
-
+      
       const startString = nextTask.startMin || nextTask.startSec ? `${nextTask.startMin || '00'}:${nextTask.startSec || '00'}` : '';
       const endString = nextTask.endMin || nextTask.endSec ? `${nextTask.endMin || '00'}:${nextTask.endSec || '00'}` : '';
 
@@ -176,13 +194,13 @@ export function useDownloader(t: any, setCustomModal: any) {
         });
         
         if (res.success) { 
-          successCount++;
-          setQueue(prev => prev.map(t => t.id === nextTask.id ? { ...t, status: 'success', percent: 100, msgKey: 'dl_msg_done', localPath: res.path } : t));
+          successCount++; 
+          setQueue(prev => prev.map(t => t.id === nextTask.id ? { ...t, status: 'success', percent: 100, msgKey: 'dlStatusSuccess', localPath: res.path } : t)) 
         } else { 
-          setQueue(prev => prev.map(t => t.id === nextTask.id ? { ...t, status: 'error', msgKey: 'dl_msg_error' } : t));
+          setQueue(prev => prev.map(t => t.id === nextTask.id ? { ...t, status: 'error', msgKey: 'dl_msg_error' } : t)) 
         }
       } catch (err) { 
-        setQueue(prev => prev.map(t => t.id === nextTask.id ? { ...t, status: 'error', msgKey: 'dl_msg_error' } : t));
+        setQueue(prev => prev.map(t => t.id === nextTask.id ? { ...t, status: 'error', msgKey: 'dl_msg_error' } : t)) 
       }
     }
     
@@ -190,10 +208,7 @@ export function useDownloader(t: any, setCustomModal: any) {
     isRunningRef.current = false;
 
     if (totalTasksRun > 0) {
-      const finishMessage = (t('dl_batch_done') || 'Hoàn tất tải {success}/{total} video!')
-        .replace('{success}', successCount.toString())
-        .replace('{total}', totalTasksRun.toString());
-      setCustomModal({ show: true, title: t('dlTitle') || 'Tải Hoàn Tất', message: finishMessage });
+      setCustomModal({ show: true, title: 'Hoàn tất tiến trình', message: `Đã tải xuống thành công ${successCount}/${totalTasksRun} video.` });
     }
   }
 
@@ -202,7 +217,6 @@ export function useDownloader(t: any, setCustomModal: any) {
     setIsProcessing(false);
   }
 
-  // 🚀 GỌI HÀM NATIVE CỦA RUST ĐỂ MỞ FILE VIDEO BẰNG WINDOWS MEDIA PLAYER/VLC CHUẨN XÁC
   const handlePlayVideo = async (localPath: string) => {
     if (!localPath) return;
     try {
@@ -213,10 +227,10 @@ export function useDownloader(t: any, setCustomModal: any) {
   }
 
   return { 
-    queue, downloadFolder, setDownloadFolder, highBitrate, toggleGlobalHighBitrate, isProcessing, 
+    queue, downloadFolder, setDownloadFolder, fastMode, toggleGlobalFastMode, isProcessing, 
     searchInput, setSearchInput, searchResults, isSearching, showSearchModal, setShowSearchModal, 
-    handlePlayVideo,
-    handleSearch, addVideoToQueue, handleAddFromClipboard, removeTask, handleStartBatch, handleCancelQueue,
+    handlePlayVideo, handleCancelQueue, handleStartBatch, removeTask,
+    handleSearch, handleAddFromClipboard, addVideoToQueue, handleClearQueue,
     setTaskResolution, setTaskStartMin, setTaskStartSec, setTaskEndMin, setTaskEndSec, setTaskIsLight, setInputUrl: setSearchInput
   }
 }

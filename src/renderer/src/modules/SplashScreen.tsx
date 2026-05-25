@@ -17,6 +17,16 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({
 }) => {
   if (bootState === 'done') return null;
 
+  // 🚀 BỘ LỌC CỦA TESTER: Chặn đứng 100% lỗi rò rỉ mã hệ thống ra ngoài giao diện
+  const getCleanStatus = (): string => {
+    const raw = t('dl_msg_sync_core');
+    // Nếu i18n lỗi trả về tên key thô hoặc mã lỗi in hoa, lập tức kích hoạt fallback an toàn
+    if (!raw || raw === 'dl_msg_sync_core' || raw === 'DL_MSG_SYNC_CORE' || raw.includes('dl_') || raw.includes('DL_')) {
+      return 'ĐANG ĐỒNG BỘ LÕI HỆ THỐNG...';
+    }
+    return raw.toUpperCase(); // Giữ nguyên phong cách UPPERCASE sang trọng của sếp
+  };
+
   return (
     <div 
     className={`fixed inset-0 z-[999999] flex flex-col items-center justify-center overflow-hidden transition-opacity duration-500 ease-out ${
@@ -104,11 +114,11 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({
           </h1>
         </div>
 
-        {/* PHỤ ĐỀ TRẠNG THÁI KHỞI CHẠY */}
+        {/* PHỤ ĐỀ TRẠNG THÁI KHỞI CHẠY - ĐÃ ĐƯỢC BỌC ÁO GIÁP AN TOÀN TOÀN DIỆN */}
         <p className={`text-[10px] font-bold tracking-[0.25em] pl-[0.25em] uppercase mt-2 mb-10 opacity-40 select-none ${
           isDark ? 'text-zinc-400' : 'text-zinc-600'
         }`}>
-          {t('dl_msg_sync_core') || 'ĐANG ĐỒNG BỘ LÕI HỆ THỐNG...'}
+          {getCleanStatus()}
         </p>
 
         {/* ========================================================== */}

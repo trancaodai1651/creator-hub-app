@@ -151,10 +151,11 @@ pub async fn download_video(
     let mut format_filter = "bv*+ba/b".to_string();
 
     if is_light {
+        // 🚀 BẢN VÁ PREMIERE: Ép luồng Video tải chuẩn H.264 (avc) và Audio chuẩn M4A/AAC
         if resolution != "best" {
-            format_filter = format!("bv*[height<={}] [vcodec^=avc]+ba/b [height<={}] [vcodec^=avc] / b [vcodec^=avc] / b", resolution, resolution);
+            format_filter = format!("bv*[height<={}][vcodec^=avc]+ba[ext=m4a]/b[height<={}][vcodec^=avc]/b", resolution, resolution);
         } else {
-            format_filter = "bv*[vcodec^=avc]+ba/b / b[vcodec^=avc] / b".to_string();
+            format_filter = "bv*[vcodec^=avc]+ba[ext=m4a]/b[vcodec^=avc]/b".to_string();
         }
     } else if resolution != "best" {
         format_filter = format!("bv*[height<={}] + ba/b", resolution);
