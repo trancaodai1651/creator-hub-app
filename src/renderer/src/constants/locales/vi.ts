@@ -62,6 +62,11 @@ export const vi: Record<string, string> = {
   btnChangeFolder: "🔄 THAY ĐỔI THƯ MỤC",
   useGpu: "Dùng GPU Render",
   logoSize: "Kích cỡ Logo:",
+  "joinSingleMode": "Xử lý 1-1 (Không gộp)",
+  "hwMax": "Tối đa (Nhanh nhất)",
+  "hwBalanced": "Cân bằng",
+  "hwLow": "Mát máy (Để lướt Web)",
+  "btnRunNow": "Vận Hành",
 
   // --- Tab 2: Video Downloader ---
   dlTitle: "📥 Trình Tải Video Đa Nền Tảng",
@@ -112,6 +117,8 @@ export const vi: Record<string, string> = {
   "dlSearchScanning": "Đang quét dữ liệu toàn cầu...",
   "dlSearchEmpty": "Không tìm thấy video nào. Vui lòng thử từ khóa khác!",
   "dlSearchClickToLoad": "Click để tải",
+  "dlHighBitrateLabel": "Bitrate cao (Nét nhất)",
+  "dlBtnWatchNow": "XEM NGAY",
 
   // --- Tab 3: File Converter ---
   convTitle: "⚡ Trình Chuyển Đổi Định Dạng File",

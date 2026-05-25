@@ -61,6 +61,11 @@ export const en: Record<string, string> = {
   btnChangeFolder: "🔄 CHANGE FOLDER",
   useGpu: "Use GPU Render",
   logoSize: "Logo Size:",
+  "joinSingleMode": "1-to-1 Process (No Join)",
+  "hwMax": "Max (Fastest)",
+  "hwBalanced": "Balanced",
+  "hwLow": "Eco (For Web Browsing)",
+  "btnRunNow": "Run Now",
   
   dlTitle: "📥 Multi-Platform Video Downloader",
   dlSub: "Supports downloading 4K video streams and custom trimming intervals.",
@@ -110,6 +115,8 @@ export const en: Record<string, string> = {
   "dlSearchScanning": "Đang quét dữ liệu toàn cầu...",
   "dlSearchEmpty": "Không tìm thấy video nào. Vui lòng thử từ khóa khác!",
   "dlSearchClickToLoad": "Click để tải",
+  "dlHighBitrateLabel": "High Bitrate (Max Quality)",
+  "dlBtnWatchNow": "WATCH NOW",
 
   convTitle: "⚡ Multimedia File Converter",
   convSub: "Convert Images, Videos, Audio with original quality and hardcode subtitle files (.srt, .ass).",

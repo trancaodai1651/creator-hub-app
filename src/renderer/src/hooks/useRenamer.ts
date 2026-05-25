@@ -1,5 +1,6 @@
 /* eslint-disable */
 import { useState } from 'react'
+import { tauriApi } from '../utils/tauriAdapter'
 
 export function useRenamer(t: any, setCustomModal: any) {
   const [selectedFiles, setSelectedFiles] = useState<any[]>([])
@@ -30,14 +31,10 @@ export function useRenamer(t: any, setCustomModal: any) {
       const separator = f.path.includes('\\') ? '\\' : '/'
       return { oldPath: f.path, newPath: `${directory}${separator}${finalNewName}${f.ext}` }
     })
-    const response = await window.electron.ipcRenderer.invoke('execute-batch-rename', { fileRules })
+    const response: any = await tauriApi.invoke('execute-batch-rename', { fileRules })
     setCustomModal({ show: true, title: t('renamerTitle'), message: response.message })
     if (response.success) setSelectedFiles([])
   }
 
-  return {
-    selectedFiles, setSelectedFiles, keepOriginal, setKeepOriginal, findText, setFindText,
-    replaceText, setReplaceText, renamePrefix, setRenamePrefix, useCounter, setUseCounter,
-    counterStart, setCounterStart, counterDigits, setCounterDigits, buildNewFileName, handleApplyRename
-  }
+  return { selectedFiles, setSelectedFiles, keepOriginal, setKeepOriginal, findText, setFindText, replaceText, setReplaceText, renamePrefix, setRenamePrefix, useCounter, setUseCounter, counterStart, setCounterStart, counterDigits, setCounterDigits, buildNewFileName, handleApplyRename }
 }

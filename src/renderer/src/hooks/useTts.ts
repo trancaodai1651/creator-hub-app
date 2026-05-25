@@ -1,5 +1,6 @@
 /* eslint-disable */
 import { useState, useEffect } from 'react'
+import { tauriApi } from '../utils/tauriAdapter'
 
 export function useTts(t: any, setCustomModal: any, elevenKey: string, activeTab: string) {
   const [ttsText, setTtsText] = useState('')
@@ -10,7 +11,7 @@ export function useTts(t: any, setCustomModal: any, elevenKey: string, activeTab
 
   useEffect(() => {
     if (activeTab === 'tts' && elevenKey.length > 5) {
-      window.electron.ipcRenderer.invoke('get-elevenlabs-voices', { apiKey: elevenKey }).then((res: any) => {
+      tauriApi.invoke('get-elevenlabs-voices', { apiKey: elevenKey }).then((res: any) => {
         if (res && Array.isArray(res)) {
           setVoices(res.map((v: any) => ({ id: v.voice_id, name: v.name, category: v.category })))
           if (res.length > 0) setSelectedVoice(res[0].voice_id)
@@ -23,12 +24,11 @@ export function useTts(t: any, setCustomModal: any, elevenKey: string, activeTab
     if (!ttsText.trim()) { alert(t('ttsPlaceholder')); return }
     setIsTtsProcessing(true)
     try {
-      const response = await window.electron.ipcRenderer.invoke('generate-tts-elevenlabs', { text: ttsText, voiceId: selectedVoice, apiKey: elevenKey, outputDir: ttsFolder })
+      const response: any = await tauriApi.invoke('generate-tts-elevenlabs', { text: ttsText, voiceId: selectedVoice, apiKey: elevenKey, outputDir: ttsFolder })
       setCustomModal({ show: true, title: t('ttsTitle'), message: response.message })
       if (response.success) setTtsText('')
-    } catch (err: any) {
-      setCustomModal({ show: true, title: "ERROR", message: err.message })
-    } finally { setIsTtsProcessing(false) }
+    } catch (err: any) { setCustomModal({ show: true, title: "ERROR", message: String(err) }) } 
+    finally { setIsTtsProcessing(false) }
   }
 
   return { ttsText, setTtsText, voices, selectedVoice, setSelectedVoice, ttsFolder, setTtsFolder, isTtsProcessing, handleGenerateTTS }

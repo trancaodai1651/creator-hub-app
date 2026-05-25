@@ -1,13 +1,18 @@
 /* eslint-disable */
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import { invoke } from '@tauri-apps/api/core'
+import { listen } from '@tauri-apps/api/event'
 
 export interface DownloadTask {
   id: string; url: string; title: string; thumbnail: string;
-  status: 'idle' | 'downloading' | 'success' | 'error';
+  status: 'idle' | 'fetching' | 'downloading' | 'success' | 'error';
   percent: number; msgKey: string;
-  startTime: string; endTime: string;   
+  startMin: string; startSec: string;
+  endMin: string; endSec: string;
   availableResolutions: string[]; selectedResolution: string;
   platform: { name: string, bg: string, text: string }; 
+  isLight: boolean;
+  localPath?: string;
 }
 
 const getPlatformData = (url: string) => {
@@ -24,83 +29,88 @@ const getPlatformData = (url: string) => {
 export function useDownloader(t: any, setCustomModal: any) {
   const [queue, setQueue] = useState<DownloadTask[]>([])
   const [downloadFolder, setDownloadFolder] = useState('')
-  const [isLight, setIsLight] = useState(true)
+  const [highBitrate, setHighBitrate] = useState(true) // 🚀 Mặc định bật Bitrate cao Pro
   const [isProcessing, setIsProcessing] = useState(false)
 
-  // 🚀 STATE TÌM KIẾM & PHÂN TÁCH LUỒNG NHẬP LIỆU
   const [searchInput, setSearchInput] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showSearchModal, setShowSearchModal] = useState(false);
 
+  const queueRef = useRef<DownloadTask[]>([]);
+  const isRunningRef = useRef<boolean>(false);
+
+  useEffect(() => { queueRef.current = queue; }, [queue]);
+
   useEffect(() => {
-    const handleProgress = (_e: any, data: { id: string, msgKey: string, percent: number }) => {
-      setQueue(prev => prev.map(task => task.id === data.id ? { ...task, percent: data.percent, msgKey: data.msgKey } : task))
+    let unlistenFn: () => void;
+    const setupListener = async () => {
+      unlistenFn = await listen('download-progress', (event: any) => {
+        const data = event.payload as { id: string, msgKey: string, percent: number };
+        setQueue(prev => prev.map(task => {
+          if (task.id === data.id) {
+            return { 
+              ...task, 
+              percent: data.percent, 
+              msgKey: data.msgKey,
+              status: data.percent === 100 ? 'success' : 'downloading'
+            }
+          }
+          return task;
+        }))
+      });
     }
-    window.electron.ipcRenderer.on('download-progress', handleProgress)
-    return () => { window.electron.ipcRenderer.removeAllListeners('download-progress') }
+    setupListener();
+    return () => { if (unlistenFn) unlistenFn(); }
   }, [])
 
-  // 🚀 HÀM TÌM KIẾM VÀ KHỬ LỖI SỰ KIỆN ENTER TỪ UI
   const handleSearch = async (overrideInput?: string) => {
-    // 🚀 Ưu tiên lấy trực tiếp từ tham số (overrideInput) do phím Enter gửi sang
     const query = overrideInput !== undefined ? overrideInput : searchInput;
     if (!query || !query.trim()) return;
 
     const cleanQuery = query.trim();
-
     if (cleanQuery.startsWith('http')) {
-      setSearchInput(''); // Xóa ô nhập
+      setSearchInput('');
       await addVideoToQueue(cleanQuery);
       return;
     }
     
-    // Luồng 2: Nếu là từ khóa chữ thường -> Tiến hành tìm kiếm video trên mạng
-    setIsSearching(true);
-    setShowSearchModal(true);
-    setSearchResults([]);
-    
+    setIsSearching(true); setShowSearchModal(true); setSearchResults([]);
     try {
-      const res = await window.electron.ipcRenderer.invoke('search-video', { keyword: query.trim(), limit: 10 });
-      if (res.success) {
-        setSearchResults(res.results);
-      } else {
-        setCustomModal({ show: true, title: 'Lỗi Tìm Kiếm', message: res.message });
-        setShowSearchModal(false);
-      }
+      const res: any = await invoke('search_video', { keyword: query.trim(), limit: 10 });
+      if (res.success) { setSearchResults(res.results); } 
+      else { setCustomModal({ show: true, title: 'Lỗi Tìm Kiếm', message: res.message }); setShowSearchModal(false); }
     } catch (err: any) {
-      setCustomModal({ show: true, title: 'Lỗi Hệ Thống', message: err.message });
-      setShowSearchModal(false);
-    } finally {
-      setIsSearching(false);
-    }
+      setCustomModal({ show: true, title: 'Lỗi Hệ Thống', message: String(err) }); setShowSearchModal(false);
+    } finally { setIsSearching(false); }
   }
 
-  // 🚀 HÀM LÕI AN TOÀN: THÊM VIDEO VÀO HÀNG CHỜ (Sử dụng crypto.randomUUID)
   const addVideoToQueue = async (targetUrl: string) => {
     const tempId = crypto.randomUUID();
     setQueue(prev => [...prev, { 
       id: tempId, url: targetUrl, title: t('dl_msg_fetching_preview') || 'Đang nạp thông tin video...', 
-      thumbnail: '', status: 'idle', percent: 0, msgKey: '', startTime: '', endTime: '', 
-      availableResolutions: ['best'], selectedResolution: 'best', platform: getPlatformData(targetUrl)
+      thumbnail: '', status: 'fetching', percent: 0, msgKey: '', 
+      startMin: '', startSec: '', endMin: '', endSec: '',
+      availableResolutions: ['best'], selectedResolution: 'best', platform: getPlatformData(targetUrl),
+      isLight: !highBitrate
     }])
 
     try {
-      const info = await window.electron.ipcRenderer.invoke('get-video-info', targetUrl)
+      const info: any = await invoke('get_video_info', { url: targetUrl })
       if (info.success && info.isPlaylist) {
-        // Hủy thẻ tạm của Playlist cha, nạp các video con ra rành mạch
         setQueue(prev => prev.filter(t => t.id !== tempId));
         const playlistTasks: DownloadTask[] = info.entries.map((entry: any) => ({
           id: crypto.randomUUID(), url: entry.url, title: entry.title, thumbnail: entry.thumbnail,
-          status: 'idle', percent: 0, msgKey: '', startTime: '', endTime: '',
-          availableResolutions: entry.availableResolutions || ['best'], selectedResolution: 'best', platform: getPlatformData(entry.url)
+          status: 'idle', percent: 0, msgKey: '', startMin: '', startSec: '', endMin: '', endSec: '',
+          availableResolutions: entry.availableResolutions || ['best'], selectedResolution: 'best', 
+          platform: getPlatformData(entry.url), isLight: !highBitrate
         }));
         setQueue(prev => [...prev, ...playlistTasks]);
       } else {
         setQueue(prev => prev.map(task => {
           if (task.id === tempId) {
             return info.success 
-              ? { ...task, title: info.title, thumbnail: info.thumbnail, availableResolutions: info.availableResolutions || ['best'] } 
+              ? { ...task, status: 'idle', title: info.title, thumbnail: info.thumbnail, availableResolutions: info.availableResolutions || ['best'] } 
               : { ...task, title: 'Lỗi không lấy được thông tin video hoặc link bảo mật', status: 'error' }
           }
           return task;
@@ -111,64 +121,102 @@ export function useDownloader(t: any, setCustomModal: any) {
     }
   }
 
-  // 🚀 HÀM THÊM ĐƯỜNG DẪN NHANH TỪ CLIPBOARD
   const handleAddFromClipboard = async () => {
     try {
       const text = await navigator.clipboard.readText();
       if (!text || !text.trim().startsWith('http')) { 
-        alert("Bộ nhớ tạm (Clipboard) không chứa đường link video hợp lệ!"); 
-        return; 
+        alert("Bộ nhớ tạm (Clipboard) không chứa đường link video hợp lệ!"); return; 
       }
       addVideoToQueue(text.trim());
-    } catch (err) { 
-      alert("Ứng dụng không xin được quyền đọc Clipboard của hệ thống!"); 
-    }
+    } catch (err) { alert("Ứng dụng không xin được quyền đọc Clipboard của hệ thống!"); }
   }
 
-  // Cập nhật thông số động cho từng thẻ card video riêng lẻ
-  const setTaskResolution = (id: string, res: string) => { setQueue(prev => prev.map(t => t.id === id ? { ...t, selectedResolution: res } : t)) }
-  const setTaskStartTime = (id: string, time: string) => { setQueue(prev => prev.map(t => t.id === id ? { ...t, startTime: time } : t)) }
-  const setTaskEndTime = (id: string, time: string) => { setQueue(prev => prev.map(t => t.id === id ? { ...t, endTime: time } : t)) }
-  const removeTask = (id: string) => { if(!isProcessing) setQueue(prev => prev.filter(t => t.id !== id)) }
+  // 🚀 ĐỒNG BỘ CÔNG TẮC: Khi gạt nút tổng, ép hàng loạt nút con bật theo
+  const toggleGlobalHighBitrate = (val: boolean) => {
+    setHighBitrate(val);
+    setQueue(prev => prev.map(task => {
+      if (task.status === 'idle' || task.status === 'error') {
+        return { ...task, isLight: !val }; 
+      }
+      return task;
+    }));
+  }
 
-  // 🚀 KÍCH HOẠT TIẾN TRÌNH TẢI BATCH HÀNG LOẠT
+  const setTaskResolution = (id: string, res: string) => { setQueue(prev => prev.map(t => t.id === id ? { ...t, selectedResolution: res } : t)) }
+  const setTaskStartMin = (id: string, val: string) => { setQueue(prev => prev.map(t => t.id === id ? { ...t, startMin: val } : t)) }
+  const setTaskStartSec = (id: string, val: string) => { setQueue(prev => prev.map(t => t.id === id ? { ...t, startSec: val } : t)) }
+  const setTaskEndMin = (id: string, val: string) => { setQueue(prev => prev.map(t => t.id === id ? { ...t, endMin: val } : t)) }
+  const setTaskEndSec = (id: string, val: string) => { setQueue(prev => prev.map(t => t.id === id ? { ...t, endSec: val } : t)) }
+  const setTaskIsLight = (id: string, val: boolean) => { setQueue(prev => prev.map(t => t.id === id ? { ...t, isLight: val } : t)) }
+  const removeTask = (id: string) => { setQueue(prev => prev.filter(t => t.id !== id)) }
+
   const handleStartBatch = async () => {
-    const tasksToRun = queue.filter(t => t.status === 'idle' || t.status === 'error')
-    if (tasksToRun.length === 0) return;
-    
+    if (isProcessing) return;
+
     setIsProcessing(true);
+    isRunningRef.current = true;
     let successCount = 0;
-    
-    for (const task of tasksToRun) {
-      setQueue(prev => prev.map(t => t.id === task.id ? { ...t, status: 'downloading', percent: 0, msgKey: 'dl_msg_starting' } : t))
+    let totalTasksRun = 0;
+
+    while (isRunningRef.current) {
+      const nextTask = queueRef.current.find(t => t.status === 'idle' || t.status === 'error');
+      if (!nextTask) break;
+
+      totalTasksRun++;
+      setQueue(prev => prev.map(t => t.id === nextTask.id ? { ...t, status: 'downloading', percent: 0, msgKey: 'dl_msg_starting' } : t));
+
+      const startString = nextTask.startMin || nextTask.startSec ? `${nextTask.startMin || '00'}:${nextTask.startSec || '00'}` : '';
+      const endString = nextTask.endMin || nextTask.endSec ? `${nextTask.endMin || '00'}:${nextTask.endSec || '00'}` : '';
+
       try {
-        const res = await window.electron.ipcRenderer.invoke('download-video', { 
-          id: task.id, url: task.url, saveDir: downloadFolder, isLight, 
-          resolution: task.selectedResolution, startTime: task.startTime, endTime: task.endTime 
-        })
+        const res: any = await invoke('download_video', { 
+          id: nextTask.id, url: nextTask.url, saveDir: downloadFolder, 
+          isLight: nextTask.isLight, resolution: nextTask.selectedResolution, 
+          startTime: startString, endTime: endString 
+        });
+        
         if (res.success) { 
-          successCount++; 
-          setQueue(prev => prev.map(t => t.id === task.id ? { ...t, status: 'success', percent: 100, msgKey: 'dl_msg_done' } : t)) 
+          successCount++;
+          setQueue(prev => prev.map(t => t.id === nextTask.id ? { ...t, status: 'success', percent: 100, msgKey: 'dl_msg_done', localPath: res.path } : t));
         } else { 
-          setQueue(prev => prev.map(t => t.id === task.id ? { ...t, status: 'error', msgKey: 'dl_msg_error' } : t)) 
+          setQueue(prev => prev.map(t => t.id === nextTask.id ? { ...t, status: 'error', msgKey: 'dl_msg_error' } : t));
         }
       } catch (err) { 
-        setQueue(prev => prev.map(t => t.id === task.id ? { ...t, status: 'error', msgKey: 'dl_msg_error' } : t)) 
+        setQueue(prev => prev.map(t => t.id === nextTask.id ? { ...t, status: 'error', msgKey: 'dl_msg_error' } : t));
       }
     }
     
     setIsProcessing(false);
-    const finishMessage = (t('dl_batch_done') || 'Hoàn tất tải {success}/{total} video!')
-      .replace('{success}', successCount.toString())
-      .replace('{total}', tasksToRun.length.toString());
-    
-    setCustomModal({ show: true, title: t('dlTitle') || 'Tải Hoàn Tất', message: finishMessage })
+    isRunningRef.current = false;
+
+    if (totalTasksRun > 0) {
+      const finishMessage = (t('dl_batch_done') || 'Hoàn tất tải {success}/{total} video!')
+        .replace('{success}', successCount.toString())
+        .replace('{total}', totalTasksRun.toString());
+      setCustomModal({ show: true, title: t('dlTitle') || 'Tải Hoàn Tất', message: finishMessage });
+    }
+  }
+
+  const handleCancelQueue = () => {
+    isRunningRef.current = false;
+    setIsProcessing(false);
+  }
+
+  // 🚀 GỌI HÀM NATIVE CỦA RUST ĐỂ MỞ FILE VIDEO BẰNG WINDOWS MEDIA PLAYER/VLC CHUẨN XÁC
+  const handlePlayVideo = async (localPath: string) => {
+    if (!localPath) return;
+    try {
+      await invoke('open_video_native', { path: localPath });
+    } catch (err) {
+      alert(String(err));
+    }
   }
 
   return { 
-    queue, downloadFolder, setDownloadFolder, isLight, setIsLight, isProcessing, 
+    queue, downloadFolder, setDownloadFolder, highBitrate, toggleGlobalHighBitrate, isProcessing, 
     searchInput, setSearchInput, searchResults, isSearching, showSearchModal, setShowSearchModal, 
-    handleSearch, addVideoToQueue, handleAddFromClipboard, removeTask, handleStartBatch, 
-    setTaskResolution, setTaskStartTime, setTaskEndTime 
+    handlePlayVideo,
+    handleSearch, addVideoToQueue, handleAddFromClipboard, removeTask, handleStartBatch, handleCancelQueue,
+    setTaskResolution, setTaskStartMin, setTaskStartSec, setTaskEndMin, setTaskEndSec, setTaskIsLight, setInputUrl: setSearchInput
   }
 }

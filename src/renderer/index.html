@@ -1,6 +1,48 @@
 <!doctype html>
 <html>
   <head>
+    <script>
+      if (!window.electron) {
+        window.electron = {
+          ipcRenderer: {
+            invoke: async (channel, ...args) => {
+              // Tự động đổi tên lệnh từ gạch nối (Electron) sang gạch dưới (Rust Tauri)
+              // Ví dụ: 'open-folder-dialog' ➔ 'open_folder_dialog'
+              let tauriCmd = channel.replace(/-/g, '_');
+              
+              // Đóng gói tham số truyền xuống khớp định dạng đặt tên của Rust
+              let payload = {};
+              if (args[0] && typeof args[0] === 'object' && !Array.isArray(args[0])) {
+                payload = args[0];
+              } else if (args.length > 0) {
+                // Bẫy phím tắt dành cho các lệnh truyền chuỗi đơn lẻ như keyword, url
+                if (tauriCmd === 'get_video_info' || tauriCmd === 'scan_folder') payload = { url: args[0], folderPath: args[0] };
+                else if (tauriCmd === 'search_video') payload = { keyword: args[0], limit: args[1] || 10 };
+              }
+
+              try {
+                if (window.__TAURI__ && window.__TAURI__.core) {
+                  return await window.__TAURI__.core.invoke(tauriCmd, payload);
+                }
+              } catch (err) {
+                console.error(`[Tauri Bridge Error] Lỗi thực thi lệnh [${tauriCmd}]:`, err);
+                return { success: false, error: err };
+              }
+            },
+            on: (channel, callback) => {
+              // Lắng nghe sự kiện tiến trình gộp và tiến trình tải đẩy từ Rust lên UI
+              if (window.__TAURI__ && window.__TAURI__.event) {
+                window.__TAURI__.event.listen(channel, (event) => {
+                  callback({}, event.payload);
+                });
+              }
+            },
+            removeAllListeners: () => {},
+            removeListener: () => {}
+          }
+        };
+      }
+    </script>
     <meta charset="UTF-8" />
     <title>CREATOR HUB</title>
     <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->

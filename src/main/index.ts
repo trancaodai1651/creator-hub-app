@@ -95,15 +95,15 @@ function createWindow(): void {
     width: 1440,
     height: 860,
     minWidth: 1200,
-    minHeight: 750,
-    show: false,
-    autoHideMenuBar: true,
+    minHeight: 800,
     titleBarStyle: 'hidden', 
     titleBarOverlay: {
-      color: '#00000000',      
-      symbolColor: '#71717a', 
-      height: 38             
+      color: '#18181b', // Màu nền thanh tiêu đề đồng bộ với Dark Mode của bạn
+      symbolColor: '#ffffff', // Màu của các nút thu nhỏ, đóng
+      height: 56 // Khớp với chiều cao h-14 (56px) của thẻ <header> trong App.tsx
     },
+    show: false,
+    autoHideMenuBar: true,
     title: 'CREATOR HUB',
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
@@ -132,7 +132,10 @@ function createWindow(): void {
 app.whenReady().then(() => {
   electronApp.setAppUserModelId('com.electron')
   app.on('browser-window-created', (_, window) => { optimizer.watchWindowShortcuts(window) })
-
+  if (process.env.TAURI_DEV === 'true') {
+    console.log('➔ [Tauri Engine Active] Đã chặn cửa sổ Electron thành công để nhường chỗ cho Tauri.');
+    return; // Dừng luồng tại đây, không chạy hàm tạo BrowserWindow nữa
+  }
   // Đăng ký đồng loạt các cổng lắng nghe IPC Backend biệt lập
   registerSystemHandlers()
   registerJoinerHandlers()
