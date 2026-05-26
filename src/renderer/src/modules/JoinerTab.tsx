@@ -5,33 +5,27 @@ interface JoinerTabProps {
   joiner: any
   t: (key: string, data?: any) => string
   isDark: boolean
-  colors: { c_bgTab: string; c_bgInput: string; c_btnSec: string; c_bgPanel: string; c_textSub: string; c_borderT: string }
+  colors?: any // Dự phòng cho TypeScript khỏi báo lỗi nếu sếp lỡ truyền
 }
 
-// 🚀 BỘ LỌC CHUỖI TÊN PHẦN CỨNG (REGEX FORMATTER SIÊU SẠCH)
+// 🚀 BỘ LỌC CHUỖI TÊN PHẦN CỨNG
 const formatHardwareName = (name: string): string => {
   if (!name || typeof name !== 'string') return '';
   let clean = name;
   
-  // 1. Chém bay các mã bộ nhớ Hex gớm ghiếc (VD: (0X00001B81) hoặc 0x1234)
   clean = clean.replace(/[\(\[]?\s*0x[0-9a-fA-F]+\s*[\)\]]?/gi, '');
-  // 2. Chém bay nhãn hiệu bản quyền (R), (TM), (C), (M)
   clean = clean.replace(/\([A-Za-z0-9]{1,2}\)/g, ''); 
-  // 3. Rút gọn thương hiệu cho gọn gàng và cao cấp
   clean = clean.replace(/NVIDIA GeForce/gi, ''); 
   clean = clean.replace(/AMD Radeon/gi, ''); 
-  // 4. Xóa chữ CPU, APU, Graphics thừa thãi
   clean = clean.replace(/\bCPU\b/gi, ''); 
   clean = clean.replace(/\bAPU\b/gi, ''); 
   clean = clean.replace(/Graphics/gi, ''); 
-  // 5. Chặt đứt toàn bộ phần xung nhịp (VD: @ 3.40GHz)
   clean = clean.replace(/\s*@.*/g, ''); 
   
   const finalStr = clean.replace(/\s+/g, ' ').trim();
   return finalStr.length > 0 ? finalStr : name; 
 }
 
-// 🚀 BỘ NHẬN DIỆN CARD RỜI 
 const checkIsDiscreteGPU = (name: string): boolean => {
   if (!name || typeof name !== 'string') return false;
   const lower = name.toLowerCase();
@@ -39,44 +33,45 @@ const checkIsDiscreteGPU = (name: string): boolean => {
   return discreteKeywords.some(kw => lower.includes(kw)); 
 }
 
-export const JoinerTab: React.FC<JoinerTabProps> = ({ joiner, t, isDark, colors }) => {
-  const [formattedGpu, setFormattedGpu] = useState('ĐANG QUÉT GPU...');
-  const [formattedCpu, setFormattedCpu] = useState('ĐANG QUÉT CPU...');
-  const [hasDiscreteGpu, setHasDiscreteGpu] = useState(true);
+export const JoinerTab: React.FC<JoinerTabProps> = ({ joiner, t, isDark }) => {
+  const [formattedGpu, setFormattedGpu] = useState('ĐANG TẢI DỮ LIỆU...');
+  const [formattedCpu, setFormattedCpu] = useState('ĐANG TẢI DỮ LIỆU...');
 
-  // 🚀 LÕI GỌI API TAURI NATIVE (ĐẬP TAN LỖI ELECTRON CŨ)
+  // 🚀 LẤY DỮ LIỆU TỪ BACKEND RUST THÔNG QUA ELECTRON BRIDGE
   useEffect(() => {
     let isMounted = true;
 
     const fetchHardwareInfo = async () => {
       try {
-        // @ts-ignore - Kiểm tra và trích xuất hàm invoke chuẩn từ nhân Tauri V2
-        const tauriInvoke = window.__TAURI__?.core?.invoke || window.__TAURI__?.invoke;
-        
-        if (tauriInvoke) {
-          // Gọi thẳng vào 2 lệnh sếp đã đăng ký trong main.rs
-          const cpuRes: string = await tauriInvoke('get_cpu_name');
-          const gpuRes: string = await tauriInvoke('get_gpu_name');
+        const cpuRes: string = await window.electron.ipcRenderer.invoke('get_cpu_name');
+        const gpuRes: string = await window.electron.ipcRenderer.invoke('get_gpu_name');
 
-          if (isMounted) {
-            // Xử lý chuỗi đa GPU (Nếu có dạng GPU1 + GPU2 thì lấy GPU rời trước)
-            const primaryGpu = gpuRes.split('+')[0].trim();
-            const isDiscrete = checkIsDiscreteGPU(primaryGpu);
-            
-            setHasDiscreteGpu(isDiscrete);
-            setFormattedCpu(formatHardwareName(cpuRes) || 'BỘ VI XỬ LÝ HỆ THỐNG');
-            setFormattedGpu(formatHardwareName(primaryGpu) || 'CHÍP ĐỒ HỌA TÍCH HỢP');
+        if (isMounted) {
+          const gpuArray = gpuRes.split('+').map((g: string) => g.trim());
+          let targetGpu = gpuArray[0] || ''; 
+          let isDiscrete = false;
 
-            // Khóa mềm: Tự động lùi về CPU nếu máy không có cạc đồ họa rời
-            if (!isDiscrete && joiner.useGpu && joiner.setUseGpu) {
-              joiner.setUseGpu(false);
+          for (const gpu of gpuArray) {
+            if (checkIsDiscreteGPU(gpu)) {
+              targetGpu = gpu;
+              isDiscrete = true;
+              break; 
             }
           }
-        } else {
-          console.warn("Không tìm thấy môi trường Tauri API Context.");
+
+          if (!isDiscrete) {
+            isDiscrete = checkIsDiscreteGPU(targetGpu);
+          }
+          
+          setFormattedCpu(formatHardwareName(cpuRes) || 'BỘ VI XỬ LÝ HỆ THỐNG');
+          setFormattedGpu(formatHardwareName(targetGpu) || 'CHÍP ĐỒ HỌA TÍCH HỢP');
+
+          if (!isDiscrete && joiner.useGpu && joiner.setUseGpu) {
+            joiner.setUseGpu(false);
+          }
         }
       } catch (err) {
-        console.error("Lỗi IPC Tauri Call:", err);
+        console.error("Lỗi IPC Call:", err);
         if (isMounted) {
           setFormattedCpu(formatHardwareName(joiner.cpuName) || 'INTEL / AMD PROCESSOR');
           setFormattedGpu(formatHardwareName(joiner.gpuName) || 'ĐỒ HỌA HỆ THỐNG');
@@ -86,15 +81,13 @@ export const JoinerTab: React.FC<JoinerTabProps> = ({ joiner, t, isDark, colors 
 
     fetchHardwareInfo();
 
-    return () => {
-      isMounted = false;
-    };
+    return () => { isMounted = false; };
   }, [joiner.gpuName, joiner.cpuName]);
 
   return (
     <div className="flex-1 flex flex-col h-full overflow-hidden w-full select-none bg-transparent p-2 gap-4">
       
-      {/* KHU VỰC KÉO THẢ & HIỂN THỊ DANH SÁCH */}
+      {/* KHU VỰC KÉO THẢ */}
       <div 
         onDrop={joiner.handleDrop} 
         onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }} 
@@ -103,12 +96,8 @@ export const JoinerTab: React.FC<JoinerTabProps> = ({ joiner, t, isDark, colors 
         {joiner.videoList.length === 0 ? (
           <div 
             onClick={async () => {
-              // @ts-ignore
-              const invoke = window.__TAURI__?.core?.invoke || window.__TAURI__?.invoke;
-              if (invoke) {
-                const path = await invoke('open-folder-dialog');
-                if (path) joiner.scanDirectory(path);
-              }
+              const path = await window.electron.ipcRenderer.invoke('open-folder-dialog');
+              if (path) joiner.scanDirectory(path);
             }} 
             className="w-full h-full flex flex-col items-center justify-center cursor-pointer relative z-10"
           >
@@ -130,12 +119,8 @@ export const JoinerTab: React.FC<JoinerTabProps> = ({ joiner, t, isDark, colors 
               </div>
               <button 
                 onClick={async () => { 
-                  // @ts-ignore
-                  const invoke = window.__TAURI__?.core?.invoke || window.__TAURI__?.invoke;
-                  if (invoke) {
-                    const path = await invoke('open-folder-dialog'); 
-                    if (path) joiner.scanDirectory(path); 
-                  }
+                  const path = await window.electron.ipcRenderer.invoke('open-folder-dialog'); 
+                  if (path) joiner.scanDirectory(path); 
                 }} 
                 className={`text-xs font-bold px-5 py-2.5 rounded-xl border hover:shadow-md transition-all active:scale-95 ${isDark ? 'bg-zinc-800 hover:bg-zinc-700 border-zinc-700 text-zinc-200' : 'bg-white hover:bg-zinc-50 border-zinc-200 text-zinc-700'}`}
               >
@@ -154,16 +139,22 @@ export const JoinerTab: React.FC<JoinerTabProps> = ({ joiner, t, isDark, colors 
         )}
       </div>
 
-      {/* KHU VỰC THANH TIẾN TRÌNH */}
+      {/* THANH TIẾN TRÌNH */}
       {joiner.isProcessing && ( 
         <div className={`shrink-0 border rounded-3xl p-5 shadow-sm relative overflow-hidden ${isDark ? 'bg-[#16161a] border-zinc-800' : 'bg-white border-zinc-200'}`}>
           <div className="absolute inset-0 bg-gradient-to-r from-red-500/5 to-transparent"></div>
-          <div className="flex justify-between items-center mb-3 relative z-10">
-            <span className={`text-sm font-bold tracking-wide ${joiner.isPaused ? 'text-yellow-500' : 'animate-pulse text-blue-500'}`}>⚡ {joiner.progressMsg}</span>
-            <span className="text-sm font-black text-red-500 bg-red-500/10 border border-red-500/20 px-3 py-1 rounded-lg shadow-inner">{joiner.progressPercent}%</span>
+          
+          <div className="flex justify-between items-center mb-3 relative z-10 gap-4">
+            <span className={`text-sm font-bold tracking-wide truncate flex-1 min-w-0 ${joiner.isPaused ? 'text-yellow-500' : 'text-blue-500'}`} title={joiner.progressMsg}>
+              ⚡ {joiner.progressMsg}
+            </span>
+            <span className="text-sm font-black text-red-500 bg-red-500/10 border border-red-500/20 px-3 py-1 rounded-lg shadow-inner shrink-0">
+              {joiner.progressPercent}%
+            </span>
           </div>
+          
           <div className={`w-full h-3 rounded-full overflow-hidden border relative z-10 ${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-zinc-100 border-zinc-200'}`}>
-            <div className={`h-full transition-all duration-300 relative ${joiner.isPaused ? 'bg-yellow-500' : 'bg-gradient-to-r from-red-500 to-rose-600'}`} style={{ width: `${joiner.progressPercent}%` }}>
+            <div className={`h-full transition-all duration-150 relative ${joiner.isPaused ? 'bg-yellow-500' : 'bg-gradient-to-r from-red-500 to-rose-600'}`} style={{ width: `${joiner.progressPercent}%` }}>
               {!joiner.isPaused && <div className="absolute top-0 right-0 bottom-0 w-20 bg-gradient-to-r from-transparent to-white/30 animate-pulse"></div>}
             </div>
           </div>
@@ -205,9 +196,8 @@ export const JoinerTab: React.FC<JoinerTabProps> = ({ joiner, t, isDark, colors 
             </div>
           </div>
 
-          {/* 🚀 KHU VỰC THẺ GPU / CPU CHUẨN UX (BẢN GA SẠCH IPC) */}
-          <div className={`flex items-center justify-between border-t pt-4 ${isDark ? 'border-zinc-800' : 'border-zinc-100'}`}>
-            <label className="flex items-center gap-3.5 group max-w-[65%] min-w-0 cursor-pointer">
+          <div className={`flex items-center justify-between gap-4 border-t pt-4 ${isDark ? 'border-zinc-800' : 'border-zinc-100'}`}>
+            <label className="flex items-center gap-3.5 group flex-1 min-w-0 cursor-pointer">
               <input type="checkbox" className="hidden" checked={joiner.useGpu} onChange={(e) => { if(joiner.setUseGpu) joiner.setUseGpu(e.target.checked) }} />
               
               <div className={`relative inline-flex h-[26px] w-[46px] items-center rounded-full transition-colors shrink-0 ${joiner.useGpu ? 'bg-[#ff6600]' : (isDark ? 'bg-[#40404a]' : 'bg-zinc-300')}`}>
@@ -218,20 +208,12 @@ export const JoinerTab: React.FC<JoinerTabProps> = ({ joiner, t, isDark, colors 
                 <span className={`text-[13px] font-[900] uppercase tracking-wide truncate transition-colors ${joiner.useGpu ? 'text-[#ff6600]' : 'text-zinc-500'}`}>
                   {joiner.useGpu ? 'CARD MÀN HÌNH (GPU)' : 'BỘ VI XỬ LÝ (CPU)'}
                 </span>
-                
-                {joiner.useGpu ? (
-                  <div className="flex items-center gap-1.5 min-w-0">
-                    <div className="bg-[#ff6600] text-black rounded-sm p-[2px] shrink-0 flex items-center justify-center">
-                       <svg className="w-[10px] h-[10px]" fill="currentColor" viewBox="0 0 24 24"><path d="M4 4h4v4H4V4zm6 0h4v4h-4V4zm6 0h4v4h-4V4zM4 10h4v4H4v-4zm6 0h4v4h-4v-4zm6 0h4v4h-4v-4zM4 16h4v4H4v-4zm6 0h4v4h-4v-4zm6 0h4v4h-4v-4z"/></svg>
-                    </div>
-                    <span className={`text-[11px] font-[800] uppercase truncate ${isDark ? 'text-zinc-300' : 'text-zinc-600'}`} title={formattedGpu}>{formattedGpu}</span>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-1.5 min-w-0">
-                    <svg className="w-3.5 h-3.5 text-blue-500 shrink-0" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><path strokeLinecap="round" d="M12 16v-4m0-4h.01"></path></svg>
-                    <span className={`text-[11px] font-[800] uppercase truncate ${isDark ? 'text-zinc-300' : 'text-zinc-600'}`} title={formattedCpu}>{formattedCpu}</span>
-                  </div>
-                )}
+                <span 
+                  className={`text-[11px] font-[800] uppercase truncate ${isDark ? 'text-zinc-300' : 'text-zinc-600'}`} 
+                  title={joiner.useGpu ? formattedGpu : formattedCpu}
+                >
+                  {joiner.useGpu ? formattedGpu : formattedCpu}
+                </span>
               </div>
             </label>
             
@@ -268,19 +250,7 @@ export const JoinerTab: React.FC<JoinerTabProps> = ({ joiner, t, isDark, colors 
               <label className={`text-[11px] font-black uppercase tracking-widest ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`}>ĐÓNG DẤU LOGO</label>
               <div className="flex items-center gap-2 w-full">
                 <input type="text" readOnly value={joiner.logoPath || "No Logo Mode"} className={`flex-1 border rounded-xl px-3 py-1.5 text-xs font-medium truncate focus:outline-none min-w-0 shadow-inner ${isDark ? 'bg-[#0f0f12] border-zinc-800' : 'bg-zinc-50 border-zinc-200'}`} />
-                <button 
-                  onClick={async () => { 
-                    // @ts-ignore
-                    const invoke = window.__TAURI__?.core?.invoke || window.__TAURI__?.invoke;
-                    if (invoke) {
-                      const path = await invoke('open-logo-dialog'); 
-                      if (path) joiner.setLogoPath(path); 
-                    }
-                  }} 
-                  className={`text-xs font-bold px-3 py-1.5 rounded-xl border transition-all active:scale-95 ${isDark ? 'bg-zinc-800 border-zinc-700 hover:bg-zinc-700 text-zinc-200' : 'bg-white border-zinc-200 hover:bg-zinc-50 text-zinc-700'}`}
-                >
-                  Chọn
-                </button>
+                <button onClick={async () => { const path = await window.electron.ipcRenderer.invoke('open-logo-dialog'); if (path) joiner.setLogoPath(path); }} className={`text-xs font-bold px-3 py-1.5 rounded-xl border transition-all active:scale-95 ${isDark ? 'bg-zinc-800 border-zinc-700 hover:bg-zinc-700 text-zinc-200' : 'bg-white border-zinc-200 hover:bg-zinc-50 text-zinc-700'}`}>Chọn</button>
                 {joiner.logoPath && <button onClick={() => joiner.setLogoPath('')} className="text-xs text-red-500 font-bold px-2 py-1.5 shrink-0 bg-red-500/10 hover:bg-red-500/20 rounded-xl transition-colors">✕</button>}
               </div>
             </div>
@@ -305,25 +275,13 @@ export const JoinerTab: React.FC<JoinerTabProps> = ({ joiner, t, isDark, colors 
             </div>
           </div>
 
-          <div className={`flex items-center gap-3 border-t pt-4 mt-1 ${isDark ? 'border-zinc-800' : 'border-zinc-100'}`}>
+          <div className={`flex items-center gap-3 border-t pt-4 mt-1 ${isDark ? 'border-zinc-800' : 'border-zinc-400'}`}>
             <input type="text" readOnly value={joiner.outputFolder || "Lưu cùng thư mục đầu vào (Mặc định)"} className={`flex-1 border rounded-xl px-3 py-1.5 text-xs font-medium truncate focus:outline-none shadow-inner ${isDark ? 'bg-[#0f0f12] border-zinc-800 text-zinc-400' : 'bg-zinc-50 border-zinc-200 text-zinc-500'}`} />
-            <button 
-              onClick={async () => { 
-                // @ts-ignore
-                const invoke = window.__TAURI__?.core?.invoke || window.__TAURI__?.invoke;
-                if (invoke) {
-                  const path = await invoke('open-folder-dialog'); 
-                  if (path) joiner.setOutputFolder(path); 
-                }
-              }} 
-              className={`text-xs font-bold px-4 py-1.5 rounded-xl border transition-all active:scale-95 ${isDark ? 'bg-zinc-800 border-zinc-700 hover:bg-zinc-700 text-zinc-200' : 'bg-white border-zinc-200 hover:bg-zinc-50 text-zinc-700'}`}
-            >
-              Đổi nơi lưu
-            </button>
+            <button onClick={async () => { const path = await window.electron.ipcRenderer.invoke('open-folder-dialog'); if (path) joiner.setOutputFolder(path); }} className={`text-xs font-bold px-4 py-1.5 rounded-xl border transition-all active:scale-95 ${isDark ? 'bg-zinc-800 border-zinc-700 hover:bg-zinc-700 text-zinc-200' : 'bg-white border-zinc-200 hover:bg-zinc-50 text-zinc-700'}`}>Đổi nơi lưu</button>
           </div>
         </div>
 
-        {/* THẺ 3: NÚT VẬN HÀNH KHỔNG LỒ */}
+        {/* NÚT VẬN HÀNH */}
         <div className="w-[180px] shrink-0 flex flex-col">
           {!joiner.isProcessing ? ( 
             <button onClick={joiner.handleStartProcess} className="w-full h-full bg-gradient-to-br from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white rounded-[24px] flex flex-col items-center justify-center gap-2 transition-all duration-300 hover:shadow-[0_15px_30px_-10px_rgba(239,68,68,0.6)] hover:-translate-y-1 active:scale-95 border border-red-400/50 relative overflow-hidden group">

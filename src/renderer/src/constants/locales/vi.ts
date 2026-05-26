@@ -59,7 +59,7 @@ export const vi: Record<string, string> = {
   posBottomRight: "Góc Phải Dưới",
   ratioOriginal: "Bản gốc",
   joinLoadedAZ: "✅ Đã nạp {count} tập tin video (Danh sách A-Z)",
-  btnChangeFolder: "🔄 THAY ĐỔI THƯ MỤC",
+  btnChangeFolder: "THAY ĐỔI THƯ MỤC",
   useGpu: "Dùng GPU Render",
   logoSize: "Kích cỡ Logo:",
   "joinSingleMode": "Xử lý 1-1 (Không gộp)",

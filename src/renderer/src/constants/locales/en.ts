@@ -62,7 +62,7 @@ export const en: Record<string, string> = {
   posBottomRight: "Bottom Right Corner",
   ratioOriginal: "Original",
   joinLoadedAZ: "✅ Loaded {count} video files (A-Z List)",
-  btnChangeFolder: "🔄 CHANGE FOLDER",
+  btnChangeFolder: "CHANGE FOLDER",
   useGpu: "Use GPU Render",
   logoSize: "Logo Size:",
   "joinSingleMode": "1-to-1 Process (No Join)",
