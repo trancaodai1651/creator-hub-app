@@ -1,8 +1,7 @@
 /* eslint-disable */
-import path from 'path';
-import type { Browser } from 'puppeteer-core';
+const path = require('path');
 
-export async function publishFacebook(browser: Browser, config: any, replyLog: (msg: string) => void) {
+async function publishFacebook(browser, config, replyLog) {
   const { videoPath, metadata, publishMode } = config;
   replyLog(`\n=========================================`);
   replyLog(`🔵 [Facebook] BẮT ĐẦU TIẾN TRÌNH TỰ ĐỘNG HÓA...`);
@@ -18,19 +17,16 @@ export async function publishFacebook(browser: Browser, config: any, replyLog: (
 
     const currentUrl = page.url();
 
-    // =========================================================================
-    // XỬ LÝ NỘI DUNG (Dọn rác text cũ & Format Hashtags)
-    // =========================================================================
     let formattedHashtags = '';
     if (metadata.hashtags) {
-      const tags = metadata.hashtags.split(',').map((t: string) => t.trim()).filter((t: string) => t.length > 0);
-      formattedHashtags = tags.map((t: string) => t.startsWith('#') ? t : `#${t}`).join(' ');
+      const tags = metadata.hashtags.split(',').map((t) => t.trim()).filter((t) => t.length > 0);
+      formattedHashtags = tags.map((t) => t.startsWith('#') ? t : `#${t}`).join(' ');
     }
     const fullContent = formattedHashtags 
       ? `${metadata.title}\n\n${metadata.description}\n\n${formattedHashtags}`
       : `${metadata.title}\n\n${metadata.description}`;
 
-    async function clearAndType(page: any, text: string) {
+    async function clearAndType(page, text) {
       await page.keyboard.down(process.platform === 'darwin' ? 'Meta' : 'Control');
       await page.keyboard.press('A');
       await page.keyboard.up(process.platform === 'darwin' ? 'Meta' : 'Control');
@@ -39,9 +35,6 @@ export async function publishFacebook(browser: Browser, config: any, replyLog: (
       await page.keyboard.type(text, { delay: 10 });
     }
 
-    // =========================================================================
-    // 🔴 KỊCH BẢN 1: FACEBOOK FANPAGE
-    // =========================================================================
     if (currentUrl.includes('business.facebook.com')) {
       replyLog(`🔵 [Facebook Fanpage] Đã vào Meta Business Suite...`);
       
@@ -53,13 +46,13 @@ export async function publishFacebook(browser: Browser, config: any, replyLog: (
             return txt === 'thêm video' || txt === 'add video';
           });
           if (addBtn) {
-            (addBtn as any).click();
+            addBtn.click();
             setTimeout(() => {
               const uploadBtn = Array.from(document.querySelectorAll('div, span')).find(el => {
                 const txt = el.textContent?.trim().toLowerCase() || '';
                 return txt.includes('tải lên') || txt.includes('upload from desktop');
               });
-              if (uploadBtn) (uploadBtn as any).click();
+              if (uploadBtn) uploadBtn.click();
             }, 1000);
           }
         })
@@ -70,7 +63,6 @@ export async function publishFacebook(browser: Browser, config: any, replyLog: (
       await new Promise(r => setTimeout(r, 8000));
 
       replyLog(`🔵 [Facebook Fanpage] Đang dọn dẹp và điền nội dung tiêu đề, mô tả...`);
-      // Focus vào ô nhập liệu bằng phím Tab (Facebook Business giấu box text rất kỹ)
       await page.keyboard.press('Tab');
       await page.keyboard.press('Tab');
       await clearAndType(page, fullContent);
@@ -89,7 +81,7 @@ export async function publishFacebook(browser: Browser, config: any, replyLog: (
           });
           if (targetBtn) {
             targetBtn.scrollIntoView({ behavior: 'instant', block: 'center' });
-            (targetBtn as any).click();
+            targetBtn.click();
             return true;
           }
           await new Promise(r => setTimeout(r, 1000));
@@ -99,10 +91,6 @@ export async function publishFacebook(browser: Browser, config: any, replyLog: (
 
       if (!actionSuccess) throw new Error(`Không thể tìm thấy nút: ${modeLog}`);
     } 
-    
-    // =========================================================================
-    // 🟢 KỊCH BẢN 2: FACEBOOK CÁ NHÂN
-    // =========================================================================
     else {
       replyLog(`🔵 [Facebook Cá Nhân] Chuyển sang đăng tường nhà...`);
       await page.goto('https://www.facebook.com/', { waitUntil: 'networkidle2' });
@@ -114,7 +102,7 @@ export async function publishFacebook(browser: Browser, config: any, replyLog: (
           const txt = el.textContent?.toLowerCase() || '';
           return txt.includes('nghĩ gì') || txt.includes("what's on your mind");
         });
-        if (composerBtn) (composerBtn as any).click();
+        if (composerBtn) composerBtn.click();
       });
       await new Promise(r => setTimeout(r, 3000));
 
@@ -126,7 +114,7 @@ export async function publishFacebook(browser: Browser, config: any, replyLog: (
             const label = el.getAttribute('aria-label')?.toLowerCase() || '';
             return label.includes('ảnh/video') || label.includes('photo/video');
           });
-          if (addPhotoBtn) (addPhotoBtn as any).click();
+          if (addPhotoBtn) addPhotoBtn.click();
         })
       ]);
       await fileChooser.accept([path.resolve(videoPath)]);
@@ -143,19 +131,19 @@ export async function publishFacebook(browser: Browser, config: any, replyLog: (
              const img = b.querySelector('img');
              return img && b.textContent; 
           });
-          if (currentPrivacyBtn) (currentPrivacyBtn as any).click();
+          if (currentPrivacyBtn) currentPrivacyBtn.click();
           
           await new Promise(r => setTimeout(r, 2000));
           const onlyMeOption = Array.from(document.querySelectorAll('div[role="radio"], div[role="button"]')).find(el => {
             const txt = el.textContent?.toLowerCase() || '';
             return txt.includes('chỉ mình tôi') || txt.includes('only me');
           });
-          if (onlyMeOption) (onlyMeOption as any).click();
+          if (onlyMeOption) onlyMeOption.click();
           
           await new Promise(r => setTimeout(r, 1000));
           const saveBtns = Array.from(document.querySelectorAll('div[role="button"]'));
           const saveBtn = saveBtns.find(b => b.textContent?.toLowerCase().includes('xong') || b.textContent?.toLowerCase().includes('done') || b.textContent?.toLowerCase().includes('lưu') || b.textContent?.toLowerCase().includes('save'));
-          if (saveBtn) (saveBtn as any).click();
+          if (saveBtn) saveBtn.click();
         });
         await new Promise(r => setTimeout(r, 2000));
       } else {
@@ -169,7 +157,7 @@ export async function publishFacebook(browser: Browser, config: any, replyLog: (
           const txt = b.textContent?.toLowerCase() || '';
           return (txt === 'đăng' || txt === 'post') && !b.getAttribute('aria-disabled');
         });
-        if (postBtn) (postBtn as any).click();
+        if (postBtn) postBtn.click();
       });
     }
 
@@ -177,8 +165,10 @@ export async function publishFacebook(browser: Browser, config: any, replyLog: (
     await new Promise(r => setTimeout(r, 10000));
     replyLog(`🟢 [Facebook] Hoàn tất tiến trình!`);
     await page.close();
-  } catch (error: any) {
+  } catch (error) {
     await page.close();
     throw new Error(`[Facebook Lỗi] ${error.message}`);
   }
 }
+
+module.exports = { publishFacebook };

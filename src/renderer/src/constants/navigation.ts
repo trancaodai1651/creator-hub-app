@@ -19,13 +19,13 @@ export const SIDEBAR_TABS: TabItem[] = [
   // ==========================================
   // 🟠 CÁC TÍNH NĂNG ĐANG PHÁT TRIỂN (Hiện huy hiệu DEV)
   // ==========================================
-  { id: 'converter', nameKey: 'fileConverter', descKey: 'descConverter', icon: '⚡', isWip: true },
-  { id: 'tts', nameKey: 'appTts', descKey: 'descTts', icon: '🗣️', isWip: true },
-  { id: 'renamer', nameKey: 'fileRenamer', descKey: 'descRenamer', icon: '🗂️', isWip: true },
-  { id: 'installer', nameKey: 'appInstaller', descKey: 'descInstaller', icon: '🛠️', isWip: true },
-  { id: 'uninstaller', nameKey: 'uninstaller', descKey: 'descUninstaller', icon: '❌', isWip: true },
-  { id: 'cleaner', nameKey: 'cleaner', descKey: 'descCleaner', icon: '🧹', isWip: true },
-  { id: 'chatbot', icon: '🤖', nameKey: 'tabChatbot', descKey: 'descChatbot', isWip: true },
-  { id: 'publisher', nameKey: 'pubTitle', descKey: 'pubSub', icon: '🚀', isWip: true },
-  { id: 'guide', icon: '📚', nameKey: 'tabGuide', descKey: 'descGuide' }
+  { id: 'publisher', nameKey: 'pubTitle', descKey: 'pubSub', icon: '🚀', isWip: false },
+  { id: 'converter', nameKey: 'fileConverter', descKey: 'descConverter', icon: '⚡', isWip: false },
+  { id: 'tts', nameKey: 'appTts', descKey: 'descTts', icon: '🗣️', isWip: false },
+  { id: 'renamer', nameKey: 'fileRenamer', descKey: 'descRenamer', icon: '🗂️', isWip: false },
+  { id: 'installer', nameKey: 'appInstaller', descKey: 'descInstaller', icon: '🛠️', isWip: false },
+  { id: 'uninstaller', nameKey: 'uninstaller', descKey: 'descUninstaller', icon: '❌', isWip: false },
+  { id: 'cleaner', nameKey: 'cleaner', descKey: 'descCleaner', icon: '🧹', isWip: false },
+  { id: 'chatbot', icon: '🤖', nameKey: 'tabChatbot', descKey: 'descChatbot', isWip: false },
+  { id: 'guide', icon: '📚', nameKey: 'tabGuide', descKey: 'descGuide', isWip: false }
 ]

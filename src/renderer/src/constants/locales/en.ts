@@ -230,7 +230,7 @@ export const en: Record<string, string> = {
   chatConfigError: "⚠️ CONFIG ERROR",
   chatConnectError: "❌ AI CONNECTION ERROR",
 
-  pubTitle: "Auto-Content Publisher Station",
+  pubTitle: "Auto-Content Publisher",
   pubSub: "Automate browsers to upload videos directly to platforms without API restriction.",
   pubChooseVideo: "Import Target Video",
   pubNoVideo: "No video imported yet",

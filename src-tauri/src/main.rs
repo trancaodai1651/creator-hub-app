@@ -71,7 +71,10 @@ fn main() {
             commands::joiner::pause_joining,
             commands::joiner::resume_joining,
             commands::joiner::cancel_joining,
-            commands::converter::convert_file
+            commands::converter::convert_file,
+            commands::publisher::select_publisher_video_file,
+            commands::publisher::setup_publisher_account,
+            commands::publisher::trigger_puppeteer_publish
         ])
         .run(tauri::generate_context!())
         .expect("Lỗi khi chạy phần mềm Tauri");

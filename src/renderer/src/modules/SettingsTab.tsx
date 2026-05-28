@@ -1,7 +1,7 @@
 /* eslint-disable */
 import React from 'react'
 
-// ĐÃ CẬP NHẬT: Nhận đầy đủ bộ gõ font chữ (fontSize, setFontSize) từ cha truyền sang
+// ĐÃ CẬP NHẬT: Nhận đầy đủ bộ gõ font chữ và API Keys từ cha truyền sang
 export const SettingsTab: React.FC<{ 
   cfg: any, 
   t: any, 
@@ -9,10 +9,10 @@ export const SettingsTab: React.FC<{
   isDark: boolean,
   onCheckUpdate: () => void 
 }> = ({ cfg, t, colors, isDark, onCheckUpdate }) => (
-  <div className={`w-full flex-1 border rounded-3xl p-8 flex flex-col gap-6 overflow-y-auto select-none ${colors.c_bgPanel} ${colors.c_borderT}`}>
+  <div className={`w-full flex-1 border rounded-3xl p-8 flex flex-col gap-6 overflow-y-auto select-none custom-scrollbar ${colors.c_bgPanel} ${colors.c_borderT}`}>
     <div>
-      <h3 className="text-2xl font-bold mb-1 flex items-center gap-2">{t('setMainTitle')}</h3>
-      <p className={`text-sm ${colors.c_textSub}`}>{t('setMainSub')}</p>
+      <h3 className="text-2xl font-bold mb-1 flex items-center gap-2">{t('setMainTitle') || 'CÀI ĐẶT HỆ THỐNG'}</h3>
+      <p className={`text-sm ${colors.c_textSub}`}>{t('setMainSub') || 'Tùy chỉnh ngôn ngữ, giao diện và các API Key kết nối'}</p>
     </div>
     
     <div className="grid grid-cols-2 gap-6 w-full border-t pt-6 border-zinc-500/10">
@@ -46,9 +46,7 @@ export const SettingsTab: React.FC<{
         </div>
       </div>
 
-      {/* ========================================================== */}
-      {/* 3. 🔤 [THÊM MỚI]: BẢNG ĐIỀU CHỈNH KÍCH THƯỚC CHỮ TỔNG CỤC   */}
-      {/* ========================================================== */}
+      {/* 3. 🔤 BẢNG ĐIỀU CHỈNH KÍCH THƯỚC CHỮ TỔNG CỤC   */}
       <div className="flex flex-col gap-3 border-t pt-5 border-zinc-500/10 col-span-2">
         <label className="text-sm font-bold flex items-center gap-2">
           🔤 {t('setThemeLabel') ? 'Kích thước chữ hệ thống:' : 'Font Size Settings:'}
@@ -76,13 +74,13 @@ export const SettingsTab: React.FC<{
         </div>
       </div>
       
-      {/* 4. 🔑 Cấu hình các dòng API Key (Đã ép màu chữ text-current chống mù màu tối) */}
+      {/* 4. 🔑 KHU VỰC AI API KEY */}
       <div className="flex flex-col gap-2.5 border-t pt-5 border-zinc-500/10 col-span-1">
         <label className="text-sm font-bold flex items-center gap-2">🔑 Groq API Key:</label>
         <input 
           type="password" 
-          value={cfg.groqKey} 
-          onChange={(e) => cfg.setGroqKey(e.target.value)} 
+          value={cfg.groqKey || ''} 
+          onChange={(e) => cfg.setGroqKey && cfg.setGroqKey(e.target.value)} 
           placeholder="gsk_..." 
           className={`w-full border rounded-xl px-4 py-2.5 text-xs font-black focus:border-red-500/50 focus:outline-none shadow-inner ${colors.c_bgInput} ${
             isDark ? 'text-white' : 'text-zinc-800'
@@ -94,8 +92,8 @@ export const SettingsTab: React.FC<{
         <label className="text-sm font-bold flex items-center gap-2">🔑 ElevenLabs API Key:</label>
         <input 
           type="password" 
-          value={cfg.elevenKey} 
-          onChange={(e) => cfg.setElevenKey(e.target.value)} 
+          value={cfg.elevenKey || ''} 
+          onChange={(e) => cfg.setElevenKey && cfg.setElevenKey(e.target.value)} 
           placeholder="Nhập API Key..." 
           className={`w-full border rounded-xl px-4 py-2.5 text-xs font-black focus:border-red-500/50 focus:outline-none shadow-inner ${colors.c_bgInput} ${
             isDark ? 'text-white' : 'text-zinc-800'
@@ -103,19 +101,50 @@ export const SettingsTab: React.FC<{
         />
       </div>
 
-      {/* 5. 🔄 Khối kiểm tra cập nhật tự động */}
+      {/* 🚀 5. KHU VỰC YOUTUBE OAUTH 2.0 CREDENTIALS */}
+      <div className="flex flex-col gap-2.5 border-t pt-5 border-zinc-500/10 col-span-1">
+        <label className="text-sm font-bold flex items-center gap-2 text-red-500">
+          ▶️ YouTube Client ID:
+        </label>
+        <input 
+          type="text" 
+          value={cfg.youtubeClientId || ''} 
+          onChange={(e) => cfg.setYoutubeClientId && cfg.setYoutubeClientId(e.target.value)} 
+          placeholder="Ví dụ: 123456789-abc...apps.googleusercontent.com" 
+          className={`w-full border rounded-xl px-4 py-2.5 text-[10px] font-mono focus:border-red-500/50 focus:outline-none shadow-inner transition-colors ${colors.c_bgInput} ${
+            isDark ? 'text-white' : 'text-zinc-800'
+          }`} 
+        />
+      </div>
+      
+      <div className="flex flex-col gap-2.5 border-t pt-5 border-zinc-500/10 col-span-1">
+        <label className="text-sm font-bold flex items-center gap-2 text-red-500">
+          🔒 YouTube Client Secret:
+        </label>
+        <input 
+          type="password" 
+          value={cfg.youtubeClientSecret || ''} 
+          onChange={(e) => cfg.setYoutubeClientSecret && cfg.setYoutubeClientSecret(e.target.value)} 
+          placeholder="Ví dụ: GOCSPX-abc123xyz..." 
+          className={`w-full border rounded-xl px-4 py-2.5 text-xs font-mono focus:border-red-500/50 focus:outline-none shadow-inner transition-colors ${colors.c_bgInput} ${
+            isDark ? 'text-white' : 'text-zinc-800'
+          }`} 
+        />
+      </div>
+
+      {/* 6. 🔄 Khối kiểm tra cập nhật tự động */}
       <div className="flex flex-col gap-2.5 border-t pt-5 border-zinc-500/10 col-span-2">
         <label className="text-sm font-bold flex items-center gap-2">
-          🔄 {t('setUpdateLabel')}
+          🔄 {t('setUpdateLabel') || 'CẬP NHẬT PHẦN MỀM'}
         </label>
         
         <div className={`flex flex-col sm:flex-row items-start sm:items-center justify-between border p-4 rounded-2xl gap-4 ${isDark ? 'bg-[#0a0a0a] border-[#222]' : 'bg-zinc-50 border-zinc-200'} shadow-sm`}>
           <div className="flex flex-col gap-0.5">
             <span className="text-xs font-black text-red-500 tracking-wide uppercase">
-              {t('setUpdateTitle')}
+              {t('setUpdateTitle') || 'Phiên bản mới nhất'}
             </span>
             <span className={`text-[11px] font-medium leading-relaxed ${colors.c_textSub}`}>
-              {t('setUpdateDesc')}
+              {t('setUpdateDesc') || 'Kiểm tra bản cập nhật hệ thống định kỳ để đảm bảo app hoạt động ổn định nhất.'}
             </span>
           </div>
           
@@ -123,7 +152,7 @@ export const SettingsTab: React.FC<{
             onClick={onCheckUpdate}
             className="bg-gradient-to-r from-red-500 to-rose-600 text-white font-black px-5 py-2.5 rounded-xl text-xs shadow-md cursor-pointer transition-all active:scale-[0.96] tracking-wider uppercase shrink-0"
           >
-            {t('setUpdateBtn')}
+            {t('setUpdateBtn') || 'KIỂM TRA NGAY'}
           </button>
         </div>
       </div>

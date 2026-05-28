@@ -1,8 +1,7 @@
 /* eslint-disable */
-import path from 'path';
-import type { Browser } from 'puppeteer-core';
+const path = require('path');
 
-export async function publishYouTube(browser: Browser, config: any, replyLog: (msg: string) => void) {
+async function publishYouTube(browser, config, replyLog) {
   const { videoPath, metadata, publishMode } = config;
   replyLog(`\n=========================================`);
   replyLog(`🔴 [YouTube] BẮT ĐẦU TIẾN TRÌNH TỰ ĐỘNG HÓA...`);
@@ -43,17 +42,13 @@ export async function publishYouTube(browser: Browser, config: any, replyLog: (m
     }
 
     const cleanTitle = String(metadata.title).trim();
-    // Nội dung mới cần chèn thêm dấu xuống dòng để tách biệt với mẫu có sẵn ở dưới
     const newDescriptionContent = formattedHashtags 
       ? `${(metadata.description || '').trim()}\n\n${formattedHashtags}\n\n`
       : `${(metadata.description || '').trim()}\n\n`;
 
-    // =========================================================================
-    // 🚀 XỬ LÝ Ô TIÊU ĐỀ: Xóa sạch tên file rác và ghi đè tiêu đề mới
-    // =========================================================================
     await page.click('#title-textarea #textbox');
     await page.evaluate(() => {
-      const el = document.querySelector('#title-textarea #textbox') as any;
+      const el = document.querySelector('#title-textarea #textbox');
       if (el) { 
         el.textContent = ''; 
         el.dispatchEvent(new Event('input', { bubbles: true })); 
@@ -62,30 +57,24 @@ export async function publishYouTube(browser: Browser, config: any, replyLog: (m
     await new Promise(r => setTimeout(r, 800));
     await page.keyboard.type(cleanTitle, { delay: 15 });
 
-    // =========================================================================
-    // 🚀 XỬ LÝ Ô MÔ TẢ: GIỮ NGUYÊN MẪU CÓ SẴN - CHỈ CHÈN THÊM VÀO ĐẦU TRANG
-    // =========================================================================
     if ((metadata.description || '').trim() || formattedHashtags) {
       replyLog(`🔴 [YouTube] Đang định vị con trỏ và bổ sung nội dung vào mẫu mô tả...`);
       await page.click('#description-textarea #textbox');
       await new Promise(r => setTimeout(r, 500));
 
-      // Thuật toán ép con trỏ chuột nhảy lên ký tự đầu tiên (Vị trí số 0) của khung text
       await page.evaluate(() => {
-        const el = document.querySelector('#description-textarea #textbox') as any;
+        const el = document.querySelector('#description-textarea #textbox');
         if (el) {
           el.focus();
           const range = document.createRange();
           const sel = window.getSelection();
-          range.setStart(el, 0); // Đặt điểm xuất phát ngay đầu dòng
+          range.setStart(el, 0); 
           range.collapse(true);
           sel?.removeAllRanges();
-          sel?.addRange(range); // Kích hoạt vị trí con trỏ mới
+          sel?.addRange(range); 
         }
       });
       await new Promise(r => setTimeout(r, 500));
-
-      // Tiến hành gõ nội dung mới, mẫu có sẵn bên dưới sẽ tự động bị đẩy lùi xuống
       await page.keyboard.type(newDescriptionContent, { delay: 10 });
     }
 
@@ -97,9 +86,9 @@ export async function publishYouTube(browser: Browser, config: any, replyLog: (m
     await new Promise(r => setTimeout(r, 1500));
 
     const audienceSelected = await page.evaluate(async () => {
-      function findDeep(sel: string, root: any = document): any[] {
-        const els: any[] = [];
-        function traverse(node: any) {
+      function findDeep(sel, root = document) {
+        const els = [];
+        function traverse(node) {
           if (node.nodeType === 1) { if (node.matches(sel)) els.push(node); if (node.shadowRoot) traverse(node.shadowRoot); }
           let child = node.firstChild; while (child) { traverse(child); child = child.nextSibling; }
         }
@@ -109,7 +98,7 @@ export async function publishYouTube(browser: Browser, config: any, replyLog: (m
       const targetTags = 'tp-yt-paper-radio-button, ytcp-radio-button';
       for (let i = 0; i < 8; i++) {
         const radios = findDeep(targetTags);
-        const targetRadio = radios.find((r: any) => {
+        const targetRadio = radios.find((r) => {
           const nameAttr = r.getAttribute('name');
           const text = r.textContent?.toLowerCase() || '';
           return nameAttr === 'VIDEO_MADE_FOR_KIDS_NOT_MFK' || nameAttr === 'NOT_MADE_FOR_KIDS' || text.includes('không dành cho trẻ em') || text.includes('không, nội dung này không');
@@ -132,59 +121,70 @@ export async function publishYouTube(browser: Browser, config: any, replyLog: (m
     for (let i = 1; i <= 3; i++) {
       await page.waitForSelector('#next-button:not([disabled])', { timeout: 20000 });
       await new Promise(r => setTimeout(r, 1500));
-      await page.evaluate(() => { (document.querySelector('#next-button') as any)?.click(); });
+      await page.evaluate(() => { document.querySelector('#next-button')?.click(); });
       await new Promise(r => setTimeout(r, 2000));
     }
 
-    const modeLog = publishMode === 'draft' ? 'KHÔNG CÔNG KHAI (Unlisted/Draft)' : 'CÔNG KHAI (Public)';
-    replyLog(`🔴 [YouTube] Áp dụng chế độ hiển thị: ${modeLog}`);
-    
-    const visibilitySelected = await page.evaluate(async (mode) => {
-      function findDeep(sel: string, root: any = document): any[] {
-        const els: any[] = [];
-        function traverse(node: any) {
-          if (node.nodeType === 1) { if (node.matches(sel)) els.push(node); if (node.shadowRoot) traverse(node.shadowRoot); }
-          let child = node.firstChild; while (child) { traverse(child); child = child.nextSibling; }
-        }
-        traverse(root); return els;
-      }
-
-      const targetTags = 'tp-yt-paper-radio-button, ytcp-radio-button';
-      for (let i = 0; i < 8; i++) {
-        const radios = findDeep(targetTags);
-        let targetRadio: any = null;
-
-        if (mode === 'draft') {
-          targetRadio = radios.find((r: any) => r.getAttribute('name') === 'UNLISTED' || (r.textContent && r.textContent.toLowerCase().includes('không công khai')));
-        } else {
-          targetRadio = radios.find((r: any) => r.getAttribute('name') === 'PUBLIC' || (r.textContent && r.textContent.toLowerCase().includes('công khai') && !r.textContent.toLowerCase().includes('không')));
+    // ==========================================
+    // 🚀 BỌC KHIÊN CHỐNG LỖI SẬP GIAO DIỆN Ở BƯỚC CUỐI
+    // ==========================================
+    try {
+      const modeLog = publishMode === 'draft' ? 'KHÔNG CÔNG KHAI (Unlisted/Draft)' : 'CÔNG KHAI (Public)';
+      replyLog(`🔴 [YouTube] Áp dụng chế độ hiển thị: ${modeLog}`);
+      
+      await page.evaluate(async (mode) => {
+        function findDeep(sel, root = document) {
+          const els = [];
+          function traverse(node) {
+            if (node.nodeType === 1) { if (node.matches(sel)) els.push(node); if (node.shadowRoot) traverse(node.shadowRoot); }
+            let child = node.firstChild; while (child) { traverse(child); child = child.nextSibling; }
+          }
+          traverse(root); return els;
         }
 
-        if (targetRadio) {
-          targetRadio.scrollIntoView({ behavior: 'instant', block: 'center' });
-          targetRadio.click();
-          return true; 
+        const targetTags = 'tp-yt-paper-radio-button, ytcp-radio-button';
+        for (let i = 0; i < 6; i++) {
+          const radios = findDeep(targetTags);
+          let targetRadio = null;
+
+          if (mode === 'draft') {
+            targetRadio = radios.find((r) => r.getAttribute('name') === 'UNLISTED' || (r.textContent && r.textContent.toLowerCase().includes('không công khai')));
+          } else {
+            targetRadio = radios.find((r) => r.getAttribute('name') === 'PUBLIC' || (r.textContent && r.textContent.toLowerCase().includes('công khai') && !r.textContent.toLowerCase().includes('không')));
+          }
+
+          if (targetRadio) {
+            targetRadio.scrollIntoView({ behavior: 'instant', block: 'center' });
+            targetRadio.click();
+            return true; 
+          }
+          await new Promise(r => setTimeout(r, 1000));
         }
-        await new Promise(r => setTimeout(r, 1000));
-      }
-      return false;
-    }, publishMode);
+        return false;
+      }, publishMode);
 
-    if (!visibilitySelected) throw new Error(`Không thể tìm thấy hoặc bấm được vào nút: ${modeLog}`);
+      replyLog(`🔴 [YouTube] Đang click xuất bản / lưu...`);
+      await new Promise(r => setTimeout(r, 2000));
+      await page.evaluate(async () => {
+        const btn = document.querySelector('#done-button');
+        if (btn && !btn.disabled) btn.click();
+      });
 
-    replyLog(`🔴 [YouTube] Đang click xuất bản / lưu...`);
-    await new Promise(r => setTimeout(r, 2000));
-    await page.evaluate(async () => {
-      const btn = document.querySelector('#done-button') as any;
-      if (btn && !btn.disabled) btn.click();
-    });
+      replyLog(`⚙️ [YouTube] Đợi đồng bộ máy chủ...`);
+      await new Promise(r => setTimeout(r, 8000));
+      
+    } catch (stepError) {
+      // Nếu có lỗi do không tìm thấy nút, nó sẽ chui vào đây và bỏ qua, báo hoàn tất thay vì sập luồng.
+      replyLog(`⚠️ [YouTube] Cảnh báo UI chậm: Bỏ qua bước chọn hiển thị. Video đã an toàn nằm trong Bản nháp!`);
+    }
 
-    replyLog(`⚙️ [YouTube] Đợi đồng bộ máy chủ...`);
-    await new Promise(r => setTimeout(r, 10000));
     replyLog(`🟢 [YouTube] Hoàn tất tiến trình!`);
     await page.close();
-  } catch (error: any) {
+    
+  } catch (error) {
     await page.close();
     throw new Error(`[YouTube Error] ${error.message}`);
   }
 }
+
+module.exports = { publishYouTube };

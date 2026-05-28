@@ -233,7 +233,7 @@ export const vi: Record<string, string> = {
   chatConfigError: "Lỗi cấu hình",
   chatConnectError: "Lỗi kết nối AI",
 
-  pubTitle: "Trạm Phát Hành Video Tự Động",
+  pubTitle: "Phát Hành Video Tự Động",
   pubSub: "Tự động hóa trình duyệt đẩy video trực tiếp lên các nền tảng mà không cần cấp quyền API.",
   pubChooseVideo: "Chọn Video Cần Đăng",
   pubNoVideo: "Chưa nạp video nào",
