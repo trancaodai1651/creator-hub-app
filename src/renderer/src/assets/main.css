@@ -244,6 +244,33 @@ html:not(.dark) .glass-header {
   transition: background-color 180ms ease, color 180ms ease;
 }
 
+.window-controls > button > span {
+  display: block;
+  font-size: 0 !important;
+  line-height: 1;
+}
+
+.window-controls > button:nth-child(1)::before {
+  content: '\00D7';
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.window-controls > button:nth-child(2)::before {
+  content: '\25A1';
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.window-controls > button:nth-child(3)::before {
+  content: '\2212';
+  font-size: 21px;
+  font-weight: 500;
+  line-height: 1;
+}
+
 .window-controls > button + button {
   border-left: 1px solid color-mix(in srgb, var(--glass-border) 72%, transparent) !important;
 }
@@ -377,6 +404,11 @@ html.dark .app-titlebar {
 .glass-button,
 .glass-control {
   border-radius: 18px;
+}
+
+.downloader-queue-item {
+  flex: 0 0 auto;
+  min-height: 104px;
 }
 
 .glass-nav-item {

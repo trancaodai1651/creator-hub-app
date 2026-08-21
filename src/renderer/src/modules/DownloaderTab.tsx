@@ -134,7 +134,7 @@ export const DownloaderTab: React.FC<DownloaderTabProps> = ({ dl, t, colors }) =
             </div>
           ) : (
             dl.queue.map((task: any) => (
-              <div key={task.id} data-glass-hover className={`group hover-shine-effect relative flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5 p-2.5 mx-1.5 my-1 rounded-[20px] transition-all duration-300 ease-out shadow-sm hover:shadow-lg bg-clip-padding border overflow-hidden ${
+              <div key={task.id} data-glass-hover className={`downloader-queue-item group hover-shine-effect relative flex shrink-0 flex-col sm:flex-row items-stretch sm:items-center gap-3.5 p-2.5 mx-1.5 my-1 min-h-[104px] rounded-[20px] transition-all duration-300 ease-out shadow-sm hover:shadow-lg bg-clip-padding border overflow-hidden ${
                 task.status === 'success' 
                   ? 'opacity-60 grayscale-[20%] border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50 hover:opacity-100 transition-opacity' 
                   : task.status === 'error' 
@@ -142,7 +142,7 @@ export const DownloaderTab: React.FC<DownloaderTabProps> = ({ dl, t, colors }) =
                     : `glass-card glass-hover ${colors.c_borderT}`
               }`}>
                 
-                <div className="w-full sm:w-[144px] h-[160px] sm:h-[81px] bg-black/5 dark:bg-white/5 rounded-[14px] overflow-hidden shrink-0 relative shadow-inner">
+                <div className="w-full sm:w-[144px] h-[160px] sm:h-[88px] bg-black/5 dark:bg-white/5 rounded-[14px] overflow-hidden shrink-0 relative shadow-inner">
                   {task.thumbnail ? <img src={task.thumbnail} alt="thumb" className="w-full h-full object-cover group-hover:scale-[1.05] transition-transform duration-500" /> : <div className="w-full h-full flex items-center justify-center text-[9px] animate-pulse opacity-40 font-bold uppercase tracking-widest">Đang tải...</div>}
                   
                   {task.status === 'success' && (
@@ -153,7 +153,7 @@ export const DownloaderTab: React.FC<DownloaderTabProps> = ({ dl, t, colors }) =
                   )}
                 </div>
                 
-                <div className={`flex-1 flex flex-col min-w-0 justify-between h-auto py-0.5 relative z-10 ${task.status === 'error' ? 'sm:min-h-[81px] sm:h-auto' : 'sm:h-[81px]'}`}>
+                <div className="flex-1 flex flex-col min-w-0 justify-between min-h-[88px] h-auto py-0.5 relative z-10">
                   
                   <div className="flex items-center justify-between gap-3 w-full pr-1">
                     <div className="flex items-center gap-2 overflow-hidden flex-1 min-w-0">

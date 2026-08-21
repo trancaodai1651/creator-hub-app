@@ -10,4 +10,7 @@ out
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+
+# Local Tauri target created by an isolated packaging run
+/src-tauri/src-tauri/
 /playwright/.auth/
