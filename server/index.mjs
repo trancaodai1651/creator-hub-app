@@ -8,9 +8,10 @@ const root = path.dirname(fileURLToPath(import.meta.url))
 const dataFile = process.env.HUB_DATA_FILE || path.join(root, 'data.json')
 const port = Number(process.env.PORT || 8787)
 const userPermissions = new Set(['download', 'joiner', 'short_export'])
+const defaultAccessCodeId = 'default-access-code'
 const defaultAdminUsername = process.env.HUB_ADMIN_USERNAME || 'trancaodai'
 const defaultAdminPassword = process.env.HUB_ADMIN_PASSWORD || 'Dai1651'
-const defaultAccessCode = String(process.env.HUB_DEFAULT_ACCESS_CODE || '1651').trim().toUpperCase()
+const defaultAccessCode = '1651'
 const sessions = new Map()
 
 const readData = () => {
@@ -30,7 +31,9 @@ const validPassword = (password, stored) => { const [, salt, expected] = String(
 const createSession = (payload) => { const value = token(); sessions.set(value, { ...payload, expiresAt: Date.now() + 1000 * 60 * 60 * 24 * 14 }); return value }
 const auth = (req, requiredRole) => { const value = String(req.headers.authorization || '').replace(/^Bearer\s+/i, ''); const session = sessions.get(value); if (!session || session.expiresAt < Date.now() || (requiredRole && session.role !== requiredRole)) return null; return { ...session, token: value } }
 const cleanPermissions = input => Array.isArray(input) ? input.filter(value => userPermissions.has(value)) : []
-const createAccessCode = (body) => ({ id: id(), code: String(body.code || `CH-${crypto.randomBytes(4).toString('hex').toUpperCase()}`).trim().toUpperCase().slice(0, 40), label: String(body.label || 'External user').trim().slice(0, 80), permissions: cleanPermissions(body.permissions), createdAt: new Date().toISOString(), expiresAt: body.expiresAt || undefined, useCount: 0 })
+const createAccessCode = (body) => ({ id: id(), code: String(body.code || `CH-${crypto.randomBytes(4).toString('hex').toUpperCase()}`).trim().toUpperCase().slice(0, 40), label: String(body.label || 'Người dùng bên ngoài').trim().slice(0, 80), permissions: cleanPermissions(body.permissions), createdAt: new Date().toISOString(), expiresAt: body.expiresAt || undefined, useCount: 0 })
+const isDefaultAccessCode = record => record?.id === defaultAccessCodeId || record?.code === defaultAccessCode
+const defaultUserPermissions = () => Array.from(userPermissions)
 
 const ensureDefaults = () => {
   let changed = false
@@ -38,9 +41,20 @@ const ensureDefaults = () => {
     data.admin = { username: defaultAdminUsername, passwordHash: passwordHash(defaultAdminPassword), displayName: defaultAdminUsername }
     changed = true
   }
-  if (!data.accessCodes.some(item => item.code === defaultAccessCode)) {
-    data.accessCodes.unshift({ id: 'default-access-code', code: defaultAccessCode, label: 'Default user', permissions: ['download', 'joiner', 'short_export'], createdAt: '2026-08-21T00:00:00.000Z', useCount: 0 })
+  const defaultRecord = data.accessCodes.find(item => isDefaultAccessCode(item))
+  if (!defaultRecord) {
+    data.accessCodes.unshift({ id: defaultAccessCodeId, code: defaultAccessCode, label: 'Người dùng mặc định', permissions: defaultUserPermissions(), createdAt: '2026-08-21T00:00:00.000Z', useCount: 0 })
     changed = true
+  } else {
+    const permissions = defaultUserPermissions()
+    if (defaultRecord.id !== defaultAccessCodeId || defaultRecord.code !== defaultAccessCode || JSON.stringify(defaultRecord.permissions || []) !== JSON.stringify(permissions) || defaultRecord.revokedAt || defaultRecord.expiresAt) {
+      defaultRecord.id = defaultAccessCodeId
+      defaultRecord.code = defaultAccessCode
+      defaultRecord.permissions = permissions
+      delete defaultRecord.revokedAt
+      delete defaultRecord.expiresAt
+      changed = true
+    }
   }
   if (changed) persist()
 }
@@ -72,8 +86,8 @@ const server = http.createServer(async (req, res) => {
       const code = data.accessCodes.find(item => item.code === String(body.code || '').trim().toUpperCase() && !item.revokedAt && (!item.expiresAt || new Date(item.expiresAt) > new Date()))
       if (!code) return json(res, 401, { message: 'Access code không hợp lệ, đã hết hạn hoặc đã bị thu hồi.' })
       code.useCount += 1; code.lastUsedAt = new Date().toISOString(); persist()
-      const session = { role: 'user', username: code.label || `user-${code.id.slice(0, 6)}`, displayName: code.label || 'External user', permissions: code.permissions, accessCodeId: code.id }
-      data.activity.unshift({ id: id(), createdAt: new Date().toISOString(), username: session.username, accessCodeId: code.id, feature: 'auth', action: 'login_access_code', resource: 'Workspace login', metadata: {} })
+      const session = { role: 'user', username: code.label || `user-${code.id.slice(0, 6)}`, displayName: code.label || 'Người dùng bên ngoài', permissions: code.permissions, accessCodeId: code.id }
+      data.activity.unshift({ id: id(), createdAt: new Date().toISOString(), username: session.username, accessCodeId: code.id, feature: 'auth', action: 'login_access_code', resource: 'Đăng nhập ứng dụng', metadata: {} })
       data.activity = data.activity.slice(0, 10000); persist()
       return json(res, 200, { session: { ...session, token: createSession(session) } })
     }
@@ -91,13 +105,14 @@ const server = http.createServer(async (req, res) => {
       if (!auth(req, 'admin')) return json(res, 401, { message: 'Admin authentication required.' })
       const record = data.accessCodes.find(item => item.id === decodeURIComponent(url.pathname.split('/').pop()))
       if (!record) return json(res, 404, { message: 'Access code not found.' })
+      if (isDefaultAccessCode(record)) return json(res, 409, { message: 'Mã truy cập mặc định 1651 luôn có đầy đủ quyền người dùng và không thể sửa.' })
       if (record.revokedAt) return json(res, 409, { message: 'Không thể sửa access code đã thu hồi.' })
       const body = await readBody(req)
       const code = String(body.code || '').trim().toUpperCase().slice(0, 40)
       if (!code) return json(res, 400, { message: 'Access code không được để trống.' })
       if (data.accessCodes.some(item => item.id !== record.id && item.code === code && !item.revokedAt)) return json(res, 409, { message: 'Access code này đã tồn tại.' })
       record.code = code
-      record.label = String(body.label || 'External user').trim().slice(0, 80)
+      record.label = String(body.label || 'Người dùng bên ngoài').trim().slice(0, 80)
       record.permissions = cleanPermissions(body.permissions)
       record.expiresAt = body.expiresAt || undefined
       persist()
@@ -107,6 +122,7 @@ const server = http.createServer(async (req, res) => {
       if (!auth(req, 'admin')) return json(res, 401, { message: 'Admin authentication required.' })
       const record = data.accessCodes.find(item => item.id === decodeURIComponent(url.pathname.split('/').pop()))
       if (!record) return json(res, 404, { message: 'Access code not found.' })
+      if (isDefaultAccessCode(record)) return json(res, 409, { message: 'Mã truy cập mặc định 1651 không thể bị thu hồi.' })
       record.revokedAt = new Date().toISOString(); persist(); return json(res, 200, { ok: true })
     }
     if (req.method === 'GET' && url.pathname === '/api/admin/activity') {

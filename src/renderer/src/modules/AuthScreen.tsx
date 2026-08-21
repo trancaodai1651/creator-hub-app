@@ -55,13 +55,13 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ isDark, onThemeToggle, o
                   <p className="text-[10px] font-medium uppercase tracking-[0.22em] opacity-50">v2.0 Beta</p>
                 </div>
               </div>
-              <p className="mb-3 text-xs font-semibold uppercase tracking-[0.22em] text-red-500">Workspace access</p>
+              <p className="mb-3 text-xs font-semibold uppercase tracking-[0.22em] text-red-500">Quyền truy cập ứng dụng</p>
               <h1 className="max-w-md text-3xl font-semibold leading-tight sm:text-4xl">Đăng nhập để tiếp tục làm việc.</h1>
-              <p className="mt-4 max-w-md text-sm leading-7 opacity-60">Admin quản lý quyền truy cập và nhật ký sử dụng. Người dùng bên ngoài chỉ cần access code do admin cấp.</p>
+              <p className="mt-4 max-w-md text-sm leading-7 opacity-60">Quản trị viên quản lý quyền truy cập và nhật ký sử dụng. Người dùng bên ngoài chỉ cần mã truy cập do quản trị viên cấp.</p>
             </div>
             <div className="mt-10 grid grid-cols-2 gap-3 text-xs font-medium opacity-70">
-              <div className="rounded-2xl border border-current/10 p-4"><strong className="mb-1 block text-red-500">Admin</strong>Quản lý mã và activity</div>
-              <div className="rounded-2xl border border-current/10 p-4"><strong className="mb-1 block text-blue-500">User</strong>Truy cập theo quyền</div>
+              <div className="rounded-2xl border border-current/10 p-4"><strong className="mb-1 block text-red-500">Quản trị viên</strong>Quản lý mã và hoạt động</div>
+              <div className="rounded-2xl border border-current/10 p-4"><strong className="mb-1 block text-blue-500">Người dùng</strong>Truy cập theo quyền</div>
             </div>
           </section>
 
@@ -75,16 +75,16 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ isDark, onThemeToggle, o
             </div>
 
             <div className={`mb-6 grid grid-cols-2 rounded-2xl border p-1 ${isDark ? 'border-white/10 bg-white/5' : 'border-zinc-200 bg-zinc-100/70'}`}>
-              <button type="button" onClick={() => { setMode('user'); setError('') }} className={`rounded-xl px-3 py-2.5 text-sm font-medium transition ${mode === 'user' ? 'bg-blue-500 text-white shadow-md' : 'opacity-55 hover:opacity-100'}`}>User access code</button>
-              <button type="button" onClick={() => { setMode('admin'); setError('') }} className={`rounded-xl px-3 py-2.5 text-sm font-medium transition ${mode === 'admin' ? 'bg-red-500 text-white shadow-md' : 'opacity-55 hover:opacity-100'}`}>Admin login</button>
+              <button type="button" onClick={() => { setMode('user'); setError('') }} className={`rounded-xl px-3 py-2.5 text-sm font-medium transition ${mode === 'user' ? 'bg-blue-500 text-white shadow-md' : 'opacity-55 hover:opacity-100'}`}>Đăng nhập bằng mã</button>
+              <button type="button" onClick={() => { setMode('admin'); setError('') }} className={`rounded-xl px-3 py-2.5 text-sm font-medium transition ${mode === 'admin' ? 'bg-red-500 text-white shadow-md' : 'opacity-55 hover:opacity-100'}`}>Đăng nhập quản trị</button>
             </div>
 
             <form onSubmit={submit} className="space-y-4">
               {mode === 'user' ? (
                 <label className="block text-sm font-medium">
-                  Access code
+                  Mã truy cập
                   <input autoFocus value={accessCode} onChange={event => setAccessCode(event.target.value.toUpperCase())} placeholder="CH-XXXXXXXX" required className={`mt-2 w-full rounded-2xl border px-4 py-3.5 text-base tracking-[0.12em] outline-none transition focus:border-blue-500 ${isDark ? 'border-white/10 bg-white/5' : 'border-zinc-200 bg-white/80'}`} />
-                  <span className="mt-2 block text-xs opacity-50">Mã được tạo trong trang Admin.</span>
+                  <span className="mt-2 block text-xs opacity-50">Mã được tạo trong trang quản trị.</span>
                 </label>
               ) : (
                 <>
@@ -95,9 +95,9 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ isDark, onThemeToggle, o
                 </>
               )}
               {error && <p className="rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-xs leading-relaxed text-red-500">{error}</p>}
-              <button disabled={busy} className={`w-full rounded-2xl py-3.5 text-sm font-semibold text-white shadow-lg transition hover:-translate-y-0.5 disabled:cursor-wait disabled:opacity-50 ${mode === 'admin' ? 'bg-red-500 hover:bg-red-600' : 'bg-blue-500 hover:bg-blue-600'}`}>{busy ? 'Đang xác thực...' : setupMode && mode === 'admin' ? 'TẠO ADMIN' : mode === 'admin' ? 'ĐĂNG NHẬP ADMIN' : 'VÀO WORKSPACE'}</button>
+              <button disabled={busy} className={`w-full rounded-2xl py-3.5 text-sm font-semibold text-white shadow-lg transition hover:-translate-y-0.5 disabled:cursor-wait disabled:opacity-50 ${mode === 'admin' ? 'bg-red-500 hover:bg-red-600' : 'bg-blue-500 hover:bg-blue-600'}`}>{busy ? 'Đang xác thực...' : setupMode && mode === 'admin' ? 'TẠO TÀI KHOẢN QUẢN TRỊ' : mode === 'admin' ? 'ĐĂNG NHẬP QUẢN TRỊ' : 'VÀO ỨNG DỤNG'}</button>
             </form>
-            <p className="mt-7 text-center text-[11px] opacity-40">{accountService.isRemoteConfigured ? 'Central workspace server enabled' : 'Local auth mode · cấu hình VITE_HUB_API_URL để đồng bộ nhiều máy'}</p>
+            <p className="mt-7 text-center text-[11px] opacity-40">{accountService.isRemoteConfigured ? 'Đã bật máy chủ đồng bộ tập trung' : 'Chế độ xác thực cục bộ · cấu hình VITE_HUB_API_URL để đồng bộ nhiều máy'}</p>
           </section>
         </div>
       </main>

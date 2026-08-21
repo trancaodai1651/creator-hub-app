@@ -164,7 +164,7 @@ export default function App() {
     const requiredPermission: Partial<Record<string, HubPermission>> = { downloader: 'download', joiner: 'joiner', highlight: 'joiner' }
     if (tabId === 'admin' && session?.role !== 'admin') return
     if (requiredPermission[tabId] && !hasPermission(session, requiredPermission[tabId]!)) {
-      setCustomModal({ show: true, title: 'ACCESS DENIED', message: 'Access code hiện tại chưa được cấp quyền cho chức năng này.' })
+      setCustomModal({ show: true, title: t('accessDeniedTitle'), message: t('accessDeniedMessage') })
       return
     }
     setActiveTab(tabId)
@@ -176,23 +176,23 @@ export default function App() {
       if (result?.hasUpdate) {
         setCustomModal({
           show: true,
-          title: `UPDATE AVAILABLE (v${result.latestVersion})`,
-          message: `${result.releaseNotes || ''}\n\nConfirm to download the update.`,
+          title: t('updateAvailable', { version: result.latestVersion }),
+          message: `${result.releaseNotes || ''}\n\n${t('updateConfirm')}`,
           onConfirm: async () => {
             setUpdateProgress({ show: true, msg: t('updateConnecting'), percent: 0 })
             try {
               await tauriApi.invoke('trigger_auto_update', { downloadUrl: result.downloadUrl, fileName: result.fileName, language })
             } catch (error: any) {
               setUpdateProgress(null)
-              setCustomModal({ show: true, title: t('updateError') || 'UPDATE DOWNLOAD ERROR', message: String(error) })
+              setCustomModal({ show: true, title: t('updateError'), message: String(error) })
             }
           }
         })
       } else if (isManual) {
-        setCustomModal({ show: true, title: 'UP TO DATE', message: 'Creator Hub is already running the latest version.' })
+        setCustomModal({ show: true, title: t('updateLatestTitle'), message: t('updateLatestMessage') })
       }
     } catch (error: any) {
-      if (isManual) setCustomModal({ show: true, title: 'UPDATE CHECK FAILED', message: String(error) })
+      if (isManual) setCustomModal({ show: true, title: t('updateCheckFailed'), message: String(error) })
     }
   }
 
@@ -248,7 +248,7 @@ export default function App() {
         </div>
 
         <div className="titlebar-actions" style={{ WebkitAppRegion: 'no-drag' } as any}>
-          <span className={`hidden max-w-[180px] truncate text-[10px] font-bold uppercase tracking-widest md:inline ${colors.c_textSub}`}>{session.displayName} · {session.role === 'admin' ? 'ADMIN' : 'USER'}</span>
+          <span className={`hidden max-w-[180px] truncate text-[10px] font-bold uppercase tracking-widest md:inline ${colors.c_textSub}`}>{session.displayName} · {session.role === 'admin' ? 'QUẢN TRỊ' : 'NGƯỜI DÙNG'}</span>
           <button onClick={() => { accountService.clearSession(); setSession(null); setActiveTab('home') }} className="glass-button glass-hover rounded-xl border px-3 py-2 text-xs font-bold">Thoát</button>
           <button onClick={() => handleTabChange('settings')} className="glass-button glass-hover flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-bold sm:px-4 sm:text-sm"><span>⚙</span><span className="hidden sm:inline">{t('settings')}</span></button>
         </div>
@@ -262,32 +262,32 @@ export default function App() {
               const isActive = activeTab === tab.id
               const isPermissionLocked = !canAccessTab(tab.id)
               const isLocked = Boolean(tab.isWip) || isPermissionLocked
-              return <button key={tab.id} disabled={isLocked} onClick={() => handleTabChange(tab.id)} data-glass-hover data-glass-active={isActive} className={`glass-nav-item glass-hover flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-bold ${isLocked ? 'cursor-not-allowed opacity-45' : isActive ? 'text-white' : isDark ? 'text-zinc-300' : 'text-zinc-600'}`}><span className="w-6 shrink-0 text-center text-lg">{tab.icon}</span><span className="min-w-0 flex-1 truncate">{t(tab.nameKey)}</span>{isLocked && <span className="text-[8px] font-black uppercase text-amber-500">{isPermissionLocked ? 'LOCK' : 'DEV'}</span>}</button>
+              return <button key={tab.id} disabled={isLocked} onClick={() => handleTabChange(tab.id)} data-glass-hover data-glass-active={isActive} className={`glass-nav-item glass-hover flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-bold ${isLocked ? 'cursor-not-allowed opacity-45' : isActive ? 'text-white' : isDark ? 'text-zinc-300' : 'text-zinc-600'}`}><span className="w-6 shrink-0 text-center text-lg">{tab.icon}</span><span className="min-w-0 flex-1 truncate">{t(tab.nameKey)}</span>{isLocked && <span className="text-[8px] font-black uppercase text-amber-500">{isPermissionLocked ? 'KHÓA' : 'ĐANG PHÁT TRIỂN'}</span>}</button>
             })}
           </nav>
         </aside>
 
         <main className="flex min-w-0 min-h-0 flex-1 flex-col overflow-hidden">
           <div className="mb-3 flex items-center gap-2 md:hidden">
-            <select aria-label="Choose workspace tool" value={activeTab} onChange={event => handleTabChange(event.target.value)} data-glass-hover className={`glass-input glass-hover min-w-0 flex-1 rounded-xl border px-3 py-2.5 text-sm font-bold outline-none ${colors.c_borderT}`}>
+            <select aria-label="Chọn công cụ" value={activeTab} onChange={event => handleTabChange(event.target.value)} data-glass-hover className={`glass-input glass-hover min-w-0 flex-1 rounded-xl border px-3 py-2.5 text-sm font-bold outline-none ${colors.c_borderT}`}>
               <option value="home">{t('dashboard')}</option>
-              {navigationTabs.map(tab => <option key={tab.id} value={tab.id} disabled={Boolean(tab.isWip) || !canAccessTab(tab.id)}>{t(tab.nameKey)}{tab.isWip ? ' - DEV' : !canAccessTab(tab.id) ? ' - LOCK' : ''}</option>)}
+              {navigationTabs.map(tab => <option key={tab.id} value={tab.id} disabled={Boolean(tab.isWip) || !canAccessTab(tab.id)}>{t(tab.nameKey)}{tab.isWip ? ' - ĐANG PHÁT TRIỂN' : !canAccessTab(tab.id) ? ' - KHÓA' : ''}</option>)}
             </select>
           </div>
 
           {activeTab === 'home' ? (
             <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto pr-0.5">
               <section className="mb-5 px-1 pt-2 sm:mb-6 sm:px-2 sm:pt-4">
-                <p className={`mb-2 text-[10px] font-black uppercase tracking-[0.22em] ${colors.c_textSub}`}>Creator workspace</p>
+                <p className={`mb-2 text-[10px] font-black uppercase tracking-[0.22em] ${colors.c_textSub}`}>{t('workspaceLabel')}</p>
                 <h1 className="max-w-2xl text-3xl font-black leading-tight tracking-tight text-red-500 sm:text-4xl">{t('welcome')}</h1>
-                <p className={`mt-2 max-w-2xl text-sm leading-relaxed ${colors.c_textSub}`}>Choose a tool to start working with your media files.</p>
+                <p className={`mt-2 max-w-2xl text-sm leading-relaxed ${colors.c_textSub}`}>{t('workspaceHint')}</p>
               </section>
               <div className="grid grid-cols-[repeat(auto-fit,minmax(230px,1fr))] gap-3 sm:gap-4">
                 {navigationTabs.map((tab: any, index: number) => {
                   const isPermissionLocked = !canAccessTab(tab.id)
                   const isLocked = Boolean(tab.isWip) || isPermissionLocked
                   return <button key={tab.id} disabled={isLocked} onClick={() => handleTabChange(tab.id)} data-glass-hover className={`glass-card glass-hover group relative flex min-h-[155px] flex-col justify-between overflow-hidden rounded-2xl border p-5 text-left opacity-0 animate-fade-in-up duration-300 ${isLocked ? 'cursor-not-allowed opacity-45' : `cursor-pointer ${isDark ? 'text-white' : 'text-zinc-800'}`}`} style={{ animationDelay: `${index * 35}ms` }}>
-                    <div className="flex items-start justify-between"><span className={`flex h-11 w-11 items-center justify-center rounded-xl text-2xl ${isDark ? 'bg-zinc-800/70' : 'bg-zinc-100'}`}>{tab.icon}</span>{isLocked && <span className="rounded-full bg-amber-500/10 px-2 py-1 text-[9px] font-black uppercase tracking-widest text-amber-500">{isPermissionLocked ? 'LOCK' : 'DEV'}</span>}</div>
+                    <div className="flex items-start justify-between"><span className={`flex h-11 w-11 items-center justify-center rounded-xl text-2xl ${isDark ? 'bg-zinc-800/70' : 'bg-zinc-100'}`}>{tab.icon}</span>{isLocked && <span className="rounded-full bg-amber-500/10 px-2 py-1 text-[9px] font-black uppercase tracking-widest text-amber-500">{isPermissionLocked ? 'KHÓA' : 'ĐANG PHÁT TRIỂN'}</span>}</div>
                     <div><h2 className="text-base font-black text-red-500">{t(tab.nameKey)}</h2><p className={`mt-1 text-xs leading-relaxed ${colors.c_textSub}`}>{t(tab.descKey)}</p></div>
                   </button>
                 })}
@@ -301,9 +301,9 @@ export default function App() {
         </main>
       </div>
 
-      {customModal?.show && <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"><div className={`relative flex max-h-[90vh] w-full max-w-[480px] flex-col gap-4 overflow-hidden rounded-2xl border p-6 shadow-2xl ${colors.c_bgPanel} ${colors.c_borderT}`}><button aria-label="Close dialog" onClick={() => setCustomModal(null)} className={`absolute right-4 top-4 text-lg font-bold ${colors.c_textSub} hover:text-red-500`}>×</button><h2 className="border-b border-zinc-500/10 pb-3 pr-8 text-base font-black uppercase tracking-wide text-red-500">{customModal.title}</h2><p className={`max-h-[300px] overflow-y-auto whitespace-pre-line text-sm font-semibold leading-relaxed ${isDark ? 'text-gray-300' : 'text-zinc-700'}`}>{customModal.message}</p><button onClick={async () => { const action = customModal.onConfirm; setCustomModal(null); if (action) await action() }} className="w-full rounded-xl bg-red-600 py-3 text-xs font-extrabold tracking-widest text-white transition-colors hover:bg-red-500">{t('modalConfirm') || 'CONFIRM'}</button></div></div>}
+      {customModal?.show && <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"><div className={`relative flex max-h-[90vh] w-full max-w-[480px] flex-col gap-4 overflow-hidden rounded-2xl border p-6 shadow-2xl ${colors.c_bgPanel} ${colors.c_borderT}`}><button aria-label={t('closeDialog')} onClick={() => setCustomModal(null)} className={`absolute right-4 top-4 text-lg font-bold ${colors.c_textSub} hover:text-red-500`}>×</button><h2 className="border-b border-zinc-500/10 pb-3 pr-8 text-base font-black uppercase tracking-wide text-red-500">{customModal.title}</h2><p className={`max-h-[300px] overflow-y-auto whitespace-pre-line text-sm font-semibold leading-relaxed ${isDark ? 'text-gray-300' : 'text-zinc-700'}`}>{customModal.message}</p><button onClick={async () => { const action = customModal.onConfirm; setCustomModal(null); if (action) await action() }} className="w-full rounded-xl bg-red-600 py-3 text-xs font-extrabold tracking-widest text-white transition-colors hover:bg-red-500">{t('modalConfirm')}</button></div></div>}
 
-      {updateProgress?.show && <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/90 p-4 backdrop-blur-md"><div className={`w-full max-w-[500px] rounded-2xl border p-6 text-center shadow-2xl sm:p-8 ${isDark ? 'border-[#262626] bg-[#171717]' : 'border-zinc-200 bg-white'}`}><span className="mb-3 block text-4xl animate-spin">◌</span><h2 className="text-lg font-black uppercase tracking-wide text-red-500">{t('updateProgressTitle') || 'Updating system'}</h2><p className={`mt-3 text-xs font-semibold leading-relaxed ${colors.c_textSub}`}>{t('updateProgressDesc') || 'Downloading the latest installer.'}</p><div className="mt-5"><div className="mb-2 flex justify-between gap-3 text-xs font-bold"><span className="truncate text-red-500">{updateProgress.msg}</span><span className="shrink-0 text-red-500">{updateProgress.percent}%</span></div><div className={`h-2 overflow-hidden rounded-full border ${colors.c_bgInput}`}><div className="h-full bg-gradient-to-r from-red-600 to-orange-500 transition-all" style={{ width: `${updateProgress.percent}%` }} /></div></div></div></div>}
+      {updateProgress?.show && <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/90 p-4 backdrop-blur-md"><div className={`w-full max-w-[500px] rounded-2xl border p-6 text-center shadow-2xl sm:p-8 ${isDark ? 'border-[#262626] bg-[#171717]' : 'border-zinc-200 bg-white'}`}><span className="mb-3 block text-4xl animate-spin">◌</span><h2 className="text-lg font-black uppercase tracking-wide text-red-500">{t('updateProgressTitle')}</h2><p className={`mt-3 text-xs font-semibold leading-relaxed ${colors.c_textSub}`}>{t('updateProgressDesc')}</p><div className="mt-5"><div className="mb-2 flex justify-between gap-3 text-xs font-bold"><span className="truncate text-red-500">{updateProgress.msg}</span><span className="shrink-0 text-red-500">{updateProgress.percent}%</span></div><div className={`h-2 overflow-hidden rounded-full border ${colors.c_bgInput}`}><div className="h-full bg-gradient-to-r from-red-600 to-orange-500 transition-all" style={{ width: `${updateProgress.percent}%` }} /></div></div></div></div>}
 
       {isFirstRun && <WelcomeModal language={language} setLanguage={setLanguage} themeSetting={themeSetting} setThemeSetting={setThemeSetting} isDark={isDark} onComplete={() => { localStorage.setItem('hub_first_run', 'false'); setIsFirstRun(false) }} />}
     </div>

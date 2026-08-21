@@ -6,6 +6,7 @@ const LOCAL_STATE_KEY = 'creator_hub_local_auth_v1'
 export const DEFAULT_ADMIN_USERNAME = 'trancaodai'
 export const DEFAULT_ADMIN_PASSWORD = 'Dai1651'
 export const DEFAULT_ACCESS_CODE = '1651'
+export const DEFAULT_ACCESS_CODE_ID = 'default-access-code'
 const DEFAULT_ADMIN_PASSWORD_HASH = '75f2faa1e8e186918c51e895c3109218ff73f3b48c1cb872a2de5d6782a689d2'
 const DEFAULT_ACCESS_PERMISSIONS: HubPermission[] = ['download', 'joiner', 'short_export']
 
@@ -21,9 +22,9 @@ interface LocalState {
 }
 
 const defaultAccessCode = (): AccessCodeRecord => ({
-  id: 'default-access-code',
+  id: DEFAULT_ACCESS_CODE_ID,
   code: DEFAULT_ACCESS_CODE,
-  label: 'Default user',
+  label: 'Người dùng mặc định',
   permissions: DEFAULT_ACCESS_PERMISSIONS,
   createdAt: '2026-08-21T00:00:00.000Z',
   useCount: 0
@@ -48,8 +49,16 @@ const readLocalState = (): LocalState => {
       state.admin = { username: DEFAULT_ADMIN_USERNAME, passwordHash: DEFAULT_ADMIN_PASSWORD_HASH }
       changed = true
     }
-    if (!state.accessCodes.some(item => item.code === DEFAULT_ACCESS_CODE)) {
+    const defaultRecord = state.accessCodes.find(item => item.id === DEFAULT_ACCESS_CODE_ID || item.code === DEFAULT_ACCESS_CODE)
+    if (!defaultRecord) {
       state.accessCodes.unshift(defaultAccessCode())
+      changed = true
+    } else if (defaultRecord.id !== DEFAULT_ACCESS_CODE_ID || defaultRecord.code !== DEFAULT_ACCESS_CODE || JSON.stringify(defaultRecord.permissions || []) !== JSON.stringify(DEFAULT_ACCESS_PERMISSIONS) || defaultRecord.revokedAt || defaultRecord.expiresAt) {
+      defaultRecord.id = DEFAULT_ACCESS_CODE_ID
+      defaultRecord.code = DEFAULT_ACCESS_CODE
+      defaultRecord.permissions = DEFAULT_ACCESS_PERMISSIONS
+      delete defaultRecord.revokedAt
+      delete defaultRecord.expiresAt
       changed = true
     }
     if (changed) writeLocalState(state)
@@ -116,13 +125,13 @@ export const accountService = {
     const state = readLocalState()
     const normalized = code.trim().toUpperCase()
     const record = state.accessCodes.find(item => item.code === normalized && !item.revokedAt && (!item.expiresAt || new Date(item.expiresAt) > new Date()))
-    if (!record) throw new Error('Access code không hợp lệ, đã hết hạn hoặc đã bị thu hồi.')
+    if (!record) throw new Error('Mã truy cập không hợp lệ, đã hết hạn hoặc đã bị thu hồi.')
     record.useCount += 1
     record.lastUsedAt = new Date().toISOString()
-    state.activity.unshift({ id: crypto.randomUUID(), createdAt: new Date().toISOString(), username: record.label || `user-${record.id.slice(0, 6)}`, accessCodeId: record.id, feature: 'auth', action: 'login_access_code', resource: 'Workspace login', metadata: {} })
+    state.activity.unshift({ id: crypto.randomUUID(), createdAt: new Date().toISOString(), username: record.label || `user-${record.id.slice(0, 6)}`, accessCodeId: record.id, feature: 'auth', action: 'login_access_code', resource: 'Đăng nhập ứng dụng', metadata: {} })
     state.activity = state.activity.slice(0, 1000)
     writeLocalState(state)
-    return { session: { token: makeToken(), role: 'user' as const, username: record.label || `user-${record.id.slice(0, 6)}`, displayName: record.label || 'External user', permissions: record.permissions, accessCodeId: record.id } }
+    return { session: { token: makeToken(), role: 'user' as const, username: record.label || `user-${record.id.slice(0, 6)}`, displayName: record.label || 'Người dùng bên ngoài', permissions: record.permissions, accessCodeId: record.id } }
   },
 
   listAccessCodes: async (session: HubSession) => {
@@ -134,8 +143,8 @@ export const accountService = {
     if (API_URL) return (await request<{ accessCode: AccessCodeRecord }>('/admin/access-codes', { method: 'POST', body: JSON.stringify(input) }, session.token)).accessCode
     const state = readLocalState()
     const code = input.code?.trim().toUpperCase() || `CH-${crypto.randomUUID().replace(/-/g, '').slice(0, 8).toUpperCase()}`
-    if (state.accessCodes.some(item => item.code === code && !item.revokedAt)) throw new Error('Access code này đã tồn tại.')
-    const record: AccessCodeRecord = { id: crypto.randomUUID(), code, label: input.label.trim() || 'External user', permissions: input.permissions, createdAt: new Date().toISOString(), expiresAt: input.expiresAt || undefined, useCount: 0 }
+    if (state.accessCodes.some(item => item.code === code && !item.revokedAt)) throw new Error('Mã truy cập này đã tồn tại.')
+    const record: AccessCodeRecord = { id: crypto.randomUUID(), code, label: input.label.trim() || 'Người dùng bên ngoài', permissions: input.permissions, createdAt: new Date().toISOString(), expiresAt: input.expiresAt || undefined, useCount: 0 }
     state.accessCodes.unshift(record)
     writeLocalState(state)
     return record
@@ -145,11 +154,12 @@ export const accountService = {
     if (API_URL) return (await request<{ accessCode: AccessCodeRecord }>(`/admin/access-codes/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(input) }, session.token)).accessCode
     const state = readLocalState()
     const record = state.accessCodes.find(item => item.id === id)
-    if (!record) throw new Error('Không tìm thấy access code.')
+    if (!record) throw new Error('Không tìm thấy mã truy cập.')
+    if (record.id === DEFAULT_ACCESS_CODE_ID || record.code === DEFAULT_ACCESS_CODE) throw new Error('Mã truy cập mặc định 1651 luôn có đầy đủ quyền người dùng và không thể sửa.')
     const normalizedCode = input.code.trim().toUpperCase()
-    if (!normalizedCode) throw new Error('Access code không được để trống.')
-    if (state.accessCodes.some(item => item.id !== id && item.code === normalizedCode && !item.revokedAt)) throw new Error('Access code này đã tồn tại.')
-    Object.assign(record, { code: normalizedCode, label: input.label.trim() || 'External user', permissions: input.permissions, expiresAt: input.expiresAt || undefined })
+    if (!normalizedCode) throw new Error('Mã truy cập không được để trống.')
+    if (state.accessCodes.some(item => item.id !== id && item.code === normalizedCode && !item.revokedAt)) throw new Error('Mã truy cập này đã tồn tại.')
+    Object.assign(record, { code: normalizedCode, label: input.label.trim() || 'Người dùng bên ngoài', permissions: input.permissions, expiresAt: input.expiresAt || undefined })
     writeLocalState(state)
     return record
   },
@@ -158,6 +168,7 @@ export const accountService = {
     if (API_URL) { await request(`/admin/access-codes/${encodeURIComponent(id)}`, { method: 'DELETE' }, session.token); return }
     const state = readLocalState()
     const record = state.accessCodes.find(item => item.id === id)
+    if (record && (record.id === DEFAULT_ACCESS_CODE_ID || record.code === DEFAULT_ACCESS_CODE)) throw new Error('Mã truy cập mặc định 1651 không thể bị thu hồi.')
     if (record) record.revokedAt = new Date().toISOString()
     writeLocalState(state)
   },
@@ -180,4 +191,11 @@ export const accountService = {
   }
 }
 
-export const hasPermission = (session: HubSession | null, permission: HubPermission) => session?.role === 'admin' || Boolean(session?.permissions.includes(permission))
+const ADMIN_ONLY_PERMISSIONS = new Set<HubPermission>(['view_activity', 'manage_access_codes'])
+
+export const hasPermission = (session: HubSession | null, permission: HubPermission) => {
+  if (!session) return false
+  if (session.role === 'admin') return true
+  if (session.accessCodeId === DEFAULT_ACCESS_CODE_ID && !ADMIN_ONLY_PERMISSIONS.has(permission)) return true
+  return Boolean(session.permissions.includes(permission))
+}

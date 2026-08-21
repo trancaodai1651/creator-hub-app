@@ -6,7 +6,7 @@ const permissionLabels: Record<HubPermission, string> = {
   download: 'Tải video',
   joiner: 'Gộp video',
   short_export: 'Bản ngắn',
-  view_activity: 'Xem activity',
+  view_activity: 'Xem hoạt động',
   manage_access_codes: 'Quản lý mã'
 }
 const userPermissions: HubPermission[] = ['download', 'joiner', 'short_export']
@@ -130,9 +130,9 @@ export const AdminTab: React.FC<AdminTabProps> = ({ session, isDark }) => {
     <div className="flex h-full min-h-0 flex-col gap-4 overflow-hidden p-4 sm:p-6">
       <header className="flex shrink-0 flex-wrap items-center justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-red-500">Admin console</p>
-          <h2 className="mt-1 text-2xl font-semibold">Quản trị workspace</h2>
-          <p className="mt-1 text-xs opacity-50">Theo dõi người dùng, quyền truy cập và hoạt động trong app.</p>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-red-500">Bảng quản trị</p>
+          <h2 className="mt-1 text-2xl font-semibold">Quản trị ứng dụng</h2>
+          <p className="mt-1 text-xs opacity-50">Theo dõi người dùng, quyền truy cập và hoạt động trong ứng dụng.</p>
         </div>
         <button type="button" onClick={() => void load().catch(error => setMessage(error.message))} className="shrink-0 rounded-full border border-current/10 px-4 py-2 text-xs font-medium transition hover:bg-black/5 dark:hover:bg-white/10">Làm mới</button>
       </header>
@@ -140,7 +140,7 @@ export const AdminTab: React.FC<AdminTabProps> = ({ session, isDark }) => {
       <div className="flex shrink-0 gap-2 overflow-x-auto border-b border-current/10 pb-2">
         {(['overview', 'codes', 'activity'] as const).map(item => (
           <button type="button" key={item} onClick={() => setView(item)} className={`shrink-0 rounded-full px-4 py-2 text-xs font-medium transition ${view === item ? 'bg-red-500 text-white' : 'opacity-55 hover:opacity-100'}`}>
-            {item === 'overview' ? 'Tổng quan' : item === 'codes' ? 'Access codes' : 'Activity log'}
+            {item === 'overview' ? 'Tổng quan' : item === 'codes' ? 'Mã truy cập' : 'Nhật ký hoạt động'}
           </button>
         ))}
       </div>
@@ -150,8 +150,8 @@ export const AdminTab: React.FC<AdminTabProps> = ({ session, isDark }) => {
       {view === 'overview' && (
         <div className="grid shrink-0 gap-3 sm:grid-cols-3">
           <div className={`rounded-3xl border p-5 ${isDark ? 'border-white/10 bg-white/5' : 'border-zinc-200 bg-white/70'}`}><p className="text-xs opacity-50">Mã đang hoạt động</p><strong className="mt-2 block text-3xl font-semibold text-blue-500">{activeCodes}</strong></div>
-          <div className={`rounded-3xl border p-5 ${isDark ? 'border-white/10 bg-white/5' : 'border-zinc-200 bg-white/70'}`}><p className="text-xs opacity-50">Lượt dùng access code</p><strong className="mt-2 block text-3xl font-semibold text-emerald-500">{totalUses}</strong></div>
-          <div className={`rounded-3xl border p-5 ${isDark ? 'border-white/10 bg-white/5' : 'border-zinc-200 bg-white/70'}`}><p className="text-xs opacity-50">Activity đã ghi nhận</p><strong className="mt-2 block text-3xl font-semibold text-red-500">{activity.length}</strong></div>
+          <div className={`rounded-3xl border p-5 ${isDark ? 'border-white/10 bg-white/5' : 'border-zinc-200 bg-white/70'}`}><p className="text-xs opacity-50">Lượt dùng mã truy cập</p><strong className="mt-2 block text-3xl font-semibold text-emerald-500">{totalUses}</strong></div>
+          <div className={`rounded-3xl border p-5 ${isDark ? 'border-white/10 bg-white/5' : 'border-zinc-200 bg-white/70'}`}><p className="text-xs opacity-50">Hoạt động đã ghi nhận</p><strong className="mt-2 block text-3xl font-semibold text-red-500">{activity.length}</strong></div>
         </div>
       )}
 
@@ -160,7 +160,7 @@ export const AdminTab: React.FC<AdminTabProps> = ({ session, isDark }) => {
           <div className="grid min-w-0 grid-cols-1 items-start gap-4 xl:grid-cols-[minmax(300px,360px)_minmax(0,1fr)]">
             <form onSubmit={handleSubmit} className={`min-w-0 rounded-3xl border p-5 ${isDark ? 'border-white/10 bg-white/5' : 'border-zinc-200 bg-white/70'}`}>
               <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0"><p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-red-500">{editorIsActive ? 'Edit access code' : 'New access code'}</p><h3 className="mt-1 text-sm font-semibold">{editorIsActive ? 'Chỉnh sửa mã' : 'Tạo access code'}</h3></div>
+                <div className="min-w-0"><p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-red-500">{editorIsActive ? 'Chỉnh sửa mã' : 'Mã mới'}</p><h3 className="mt-1 text-sm font-semibold">{editorIsActive ? 'Chỉnh sửa mã' : 'Tạo mã truy cập'}</h3></div>
                 {editorIsActive && <button type="button" onClick={resetEditor} className="shrink-0 rounded-full border border-current/10 px-3 py-1.5 text-[11px] font-medium opacity-70 hover:opacity-100">Hủy</button>}
               </div>
 
@@ -191,19 +191,19 @@ export const AdminTab: React.FC<AdminTabProps> = ({ session, isDark }) => {
                 <div key={record.id} className={`min-w-0 rounded-3xl border p-4 ${record.revokedAt ? 'opacity-45' : ''} ${editingId === record.id ? 'border-blue-500/50 ring-1 ring-blue-500/20' : ''} ${isDark ? 'border-white/10 bg-white/5' : 'border-zinc-200 bg-white/70'}`}>
                   <div className="flex min-w-0 items-start justify-between gap-3">
                     <div className="min-w-0 flex-1"><p className="break-all font-mono text-lg font-semibold tracking-widest text-blue-500">{record.code}</p><p className="mt-1 truncate text-xs opacity-55">{record.label} · {record.useCount} lượt dùng</p></div>
-                    {!record.revokedAt && <div className="flex shrink-0 flex-wrap justify-end gap-2"><button type="button" title="Chỉnh sửa mã" onClick={() => startEdit(record)} className="rounded-full border border-blue-500/20 px-3 py-1.5 text-[11px] font-medium text-blue-500 hover:bg-blue-500/10">Sửa</button><button type="button" disabled={busy} onClick={() => void revoke(record)} className="rounded-full border border-red-500/20 px-3 py-1.5 text-[11px] font-medium text-red-500 hover:bg-red-500/10">Thu hồi</button></div>}
+                    {!record.revokedAt && <div className="flex shrink-0 flex-wrap justify-end gap-2">{record.code === '1651' ? <span className="rounded-full bg-emerald-500/10 px-3 py-1.5 text-[11px] font-medium text-emerald-600">Mặc định · đầy đủ quyền</span> : <><button type="button" title="Chỉnh sửa mã" onClick={() => startEdit(record)} className="rounded-full border border-blue-500/20 px-3 py-1.5 text-[11px] font-medium text-blue-500 hover:bg-blue-500/10">Sửa</button><button type="button" disabled={busy} onClick={() => void revoke(record)} className="rounded-full border border-red-500/20 px-3 py-1.5 text-[11px] font-medium text-red-500 hover:bg-red-500/10">Thu hồi</button></>}</div>}
                   </div>
                   <div className="mt-3 flex min-w-0 flex-wrap gap-1.5">{record.permissions.map(permission => <span key={permission} className="rounded-full bg-blue-500/10 px-2 py-1 text-[10px] text-blue-500">{permissionLabels[permission]}</span>)}</div>
                   <p className="mt-3 break-words text-[10px] opacity-40">Tạo: {new Date(record.createdAt).toLocaleString()} {record.expiresAt ? `· Hết hạn: ${new Date(record.expiresAt).toLocaleString()}` : '· Không hết hạn'}</p>
                 </div>
               ))}
-              {codes.length === 0 && <div className="rounded-3xl border border-dashed border-current/15 p-8 text-center text-sm opacity-45">Chưa có access code.</div>}
+              {codes.length === 0 && <div className="rounded-3xl border border-dashed border-current/15 p-8 text-center text-sm opacity-45">Chưa có mã truy cập.</div>}
             </div>
           </div>
         </div>
       )}
 
-      {view === 'activity' && <div className="custom-scrollbar min-h-0 min-w-0 flex-1 overflow-auto rounded-3xl border border-current/10"><table className="w-full min-w-[760px] text-left text-xs"><thead className="sticky top-0 border-b border-current/10 bg-inherit text-[10px] uppercase tracking-widest opacity-55"><tr><th className="px-4 py-3">Thời gian</th><th className="px-4 py-3">User</th><th className="px-4 py-3">Chức năng</th><th className="px-4 py-3">Hành động</th><th className="px-4 py-3">Link / resource</th></tr></thead><tbody>{activity.map(item => <tr key={item.id} className="border-b border-current/5 align-top"><td className="whitespace-nowrap px-4 py-3 opacity-55">{new Date(item.createdAt).toLocaleString()}</td><td className="px-4 py-3 font-medium">{item.username}</td><td className="px-4 py-3 text-blue-500">{item.feature}</td><td className="px-4 py-3">{item.action}</td><td className="max-w-[420px] truncate px-4 py-3 opacity-65" title={item.link || item.resource}>{item.link || item.resource || '-'}</td></tr>)}</tbody></table>{activity.length === 0 && <div className="p-8 text-center text-sm opacity-45">Chưa có activity.</div>}</div>}
+      {view === 'activity' && <div className="custom-scrollbar min-h-0 min-w-0 flex-1 overflow-auto rounded-3xl border border-current/10"><table className="w-full min-w-[760px] text-left text-xs"><thead className="sticky top-0 border-b border-current/10 bg-inherit text-[10px] uppercase tracking-widest opacity-55"><tr><th className="px-4 py-3">Thời gian</th><th className="px-4 py-3">Người dùng</th><th className="px-4 py-3">Chức năng</th><th className="px-4 py-3">Hành động</th><th className="px-4 py-3">Liên kết / tài nguyên</th></tr></thead><tbody>{activity.map(item => <tr key={item.id} className="border-b border-current/5 align-top"><td className="whitespace-nowrap px-4 py-3 opacity-55">{new Date(item.createdAt).toLocaleString()}</td><td className="px-4 py-3 font-medium">{item.username}</td><td className="px-4 py-3 text-blue-500">{item.feature}</td><td className="px-4 py-3">{item.action}</td><td className="max-w-[420px] truncate px-4 py-3 opacity-65" title={item.link || item.resource}>{item.link || item.resource || '-'}</td></tr>)}</tbody></table>{activity.length === 0 && <div className="p-8 text-center text-sm opacity-45">Chưa có hoạt động.</div>}</div>}
     </div>
   )
 }

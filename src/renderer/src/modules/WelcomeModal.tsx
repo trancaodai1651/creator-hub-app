@@ -23,11 +23,11 @@ export const WelcomeModal: React.FC<WelcomeModalProps> = ({
     vi: {
       title: "Chào mừng đến với CREATOR HUB",
       sub: "Vui lòng thiết lập ngôn ngữ và giao diện ưu thích để bắt đầu tối ưu hóa trải nghiệm hệ thống của bạn.",
-      langLabel: "1. Chọn Ngôn ngữ hệ thống (Language):",
-      themeLabel: "2. Chọn Giao diện hiển thị (Interface Theme):",
-      dark: "🌙 Giao diện Tối (Dark Mode)",
-      light: "☀️ Giao diện Sáng (Light Mode)",
-      system: "💻 Theo Hệ thống (Windows/Mac)",
+      langLabel: "1. Chọn ngôn ngữ hệ thống:",
+      themeLabel: "2. Chọn giao diện hiển thị:",
+      dark: "🌙 Giao diện tối",
+      light: "☀️ Giao diện sáng",
+      system: "💻 Theo hệ thống (Windows/macOS)",
       btn: "KÍCH HOẠT HỆ THỐNG"
     },
     en: {

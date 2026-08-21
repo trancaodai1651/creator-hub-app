@@ -56,7 +56,7 @@ export function registerJoinerHandlers() {
       }
 
       if (await checkPauseAndCancel("Đang tính toán sắp xếp kịch bản...", 100)) return { success: false, message: "Đã hủy bỏ!" }
-      event.sender.send('join-progress', { message: `Giai đoạn 2/3: Đang ngẫu nhiên hóa kịch bản video (Shuffle)...`, percent: 100 })
+      event.sender.send('join-progress', { message: `Giai đoạn 2/3: Đang xáo trộn kịch bản video...`, percent: 100 })
 
       let pillars = requirePillar ? videoData.filter(v => v.duration > 600) : []
       let smallVideos = requirePillar ? videoData.filter(v => v.duration <= 600) : [...videoData]
@@ -105,6 +105,8 @@ export function registerJoinerHandlers() {
             let ratioFilter = 'scale=trunc(iw/2)*2:trunc(ih/2)*2'
             if (ratio === '16:9') ratioFilter = 'scale=1920:1080:force_original_aspect_ratio=increase,crop=1920:1080'
             else if (ratio === '9:16') ratioFilter = 'scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920'
+            else if (ratio === '4:3') ratioFilter = 'scale=1440:1080:force_original_aspect_ratio=increase,crop=1440:1080'
+            else if (ratio === '3:4') ratioFilter = 'scale=1080:1440:force_original_aspect_ratio=increase,crop=1080:1440'
             else if (ratio === '1:1') ratioFilter = 'scale=1080:1080:force_original_aspect_ratio=increase,crop=1080:1080'
 
             if (hasLogo) {

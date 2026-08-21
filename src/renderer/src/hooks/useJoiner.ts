@@ -88,7 +88,7 @@ export function useJoiner(t: (key: string) => string, setCustomModal: (modal: an
     void accountService.track(session, {
       feature: 'joiner',
       action: 'export_start',
-      resource: `${videoList.length} video files`,
+      resource: `${videoList.length} tệp video`,
       metadata: { minMins: minTime, maxMins: maxTime, ratio: joinRatio, singleMode, shortVersion: shortVersionEnabled, shortDuration, shortRatio, logoMode }
     })
     setIsProcessing(true); setIsPaused(false); setProgressPercent(0); setProgressMsg(t('processing'))
@@ -106,10 +106,10 @@ export function useJoiner(t: (key: string) => string, setCustomModal: (modal: an
         logoSize, ratio: joinRatio, useGpu, singleMode, hardwareMode
       })
       let message = response?.message || 'Đã hoàn thành phiên bản gốc.'
-      if (response?.success && shortVersionEnabled) {
+      if (response?.success && shortVersionEnabled === true) {
         try {
           const joinedVideoPaths = Array.isArray(response?.paths) ? response.paths.filter(Boolean) : []
-          if (joinedVideoPaths.length === 0) throw new Error('Không tìm thấy file bản dài để tạo bản ngắn theo cùng kịch bản.')
+          if (joinedVideoPaths.length === 0) throw new Error('Không tìm thấy tệp bản dài để tạo bản ngắn theo cùng kịch bản.')
           const shortResponse: any = await tauriApi.invoke('export-short-version', {
             videoPaths: joinedVideoPaths,
             outputDir: outputFolder,
@@ -126,7 +126,7 @@ export function useJoiner(t: (key: string) => string, setCustomModal: (modal: an
       }
       setCustomModal({ show: true, title: t('joinTitle'), message })
     } catch (error: any) { 
-      setCustomModal({ show: true, title: "ERROR", message: String(error) }) 
+      setCustomModal({ show: true, title: 'LỖI', message: String(error) })
     } finally {
       setIsProcessing(false); 
       setIsPaused(false); 
@@ -160,11 +160,11 @@ export function useJoiner(t: (key: string) => string, setCustomModal: (modal: an
   const handleHighlightExport = async () => {
     const segments = highlightSegments.filter(segment => segment.videoPath && segment.endSecs > segment.startSecs)
     if (segments.length === 0) {
-      setCustomModal({ show: true, title: 'HIGHLIGHT', message: 'Hãy chọn video và nhập mốc kết thúc lớn hơn mốc bắt đầu.' })
+      setCustomModal({ show: true, title: 'ĐOẠN NỔI BẬT', message: 'Hãy chọn video và nhập mốc kết thúc lớn hơn mốc bắt đầu.' })
       return
     }
     setHighlightProcessing(true)
-    void accountService.track(session, { feature: 'joiner', action: 'highlight_export_start', resource: `${segments.length} highlight segments`, metadata: { outputMode: highlightOutputMode, ratio: highlightRatio, logoMode } })
+    void accountService.track(session, { feature: 'joiner', action: 'highlight_export_start', resource: `${segments.length} đoạn nổi bật`, metadata: { outputMode: highlightOutputMode, ratio: highlightRatio, logoMode } })
     try {
       const isShort = highlightOutputMode.includes('short')
       const response: any = await tauriApi.invoke('export-highlights', {
@@ -176,13 +176,13 @@ export function useJoiner(t: (key: string) => string, setCustomModal: (modal: an
         logoPosition,
         logoSize
       })
-      if (!response?.success) throw new Error(response?.message || 'Không thể xuất highlight.')
-      void accountService.track(session, { feature: 'joiner', action: 'highlight_export_success', resource: `${response.paths?.length || 0} highlight outputs`, metadata: { outputMode: highlightOutputMode, ratio: highlightRatio } })
-      setCustomModal({ show: true, title: 'HIGHLIGHT', message: response.message || 'Đã xuất highlight thành công.' })
+      if (!response?.success) throw new Error(response?.message || 'Không thể xuất đoạn nổi bật.')
+      void accountService.track(session, { feature: 'joiner', action: 'highlight_export_success', resource: `${response.paths?.length || 0} tệp đầu ra`, metadata: { outputMode: highlightOutputMode, ratio: highlightRatio } })
+      setCustomModal({ show: true, title: 'ĐOẠN NỔI BẬT', message: response.message || 'Đã xuất đoạn nổi bật thành công.' })
     } catch (error: any) {
       const message = error?.message || String(error)
-      void accountService.track(session, { feature: 'joiner', action: 'highlight_export_error', resource: 'Highlight export', metadata: { error: message } })
-      setCustomModal({ show: true, title: 'HIGHLIGHT ERROR', message })
+      void accountService.track(session, { feature: 'joiner', action: 'highlight_export_error', resource: 'Xuất đoạn nổi bật', metadata: { error: message } })
+      setCustomModal({ show: true, title: 'LỖI ĐOẠN NỔI BẬT', message })
     } finally {
       setHighlightProcessing(false)
     }
@@ -195,7 +195,7 @@ export function useJoiner(t: (key: string) => string, setCustomModal: (modal: an
     } else { 
       await tauriApi.invoke('pause-joining'); 
       setIsPaused(true); 
-      setProgressMsg('[PAUSED]... ') 
+      setProgressMsg('[TẠM DỪNG]... ')
     }
   }
 
