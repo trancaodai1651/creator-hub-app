@@ -90,11 +90,11 @@ label {
 
 .font-black,
 .font-extrabold {
-  font-weight: 650 !important;
+  font-weight: 600 !important;
 }
 
 .font-bold {
-  font-weight: 600 !important;
+  font-weight: 550 !important;
 }
 
 .font-semibold {
