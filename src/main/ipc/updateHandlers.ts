@@ -20,7 +20,7 @@ export function registerUpdateHandlers() {
       }
 
       const releaseData = await response.json();
-      const latestVersion = releaseData.tag_name.replace('v', ''); // Lấy "1.1.1" từ "v1.1.1"
+      const latestVersion = releaseData.tag_name.replace('v', ''); // Read the version from the GitHub release tag.
       const currentVersion = app.getVersion();
 
       // Nếu phát hiện phiên bản trên mạng lớn hơn phiên bản hiện tại

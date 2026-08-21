@@ -1,5 +1,6 @@
 /* eslint-disable */
 import React, { useState, useEffect } from 'react'
+import { tauriApi } from '../utils/tauriAdapter'
 
 interface JoinerTabProps {
   joiner: any
@@ -43,8 +44,8 @@ export const JoinerTab: React.FC<JoinerTabProps> = ({ joiner, t, isDark }) => {
 
     const fetchHardwareInfo = async () => {
       try {
-        const cpuRes: string = await window.electron.ipcRenderer.invoke('get_cpu_name');
-        const gpuRes: string = await window.electron.ipcRenderer.invoke('get_gpu_name');
+        const cpuRes: string = await tauriApi.invoke('get_cpu_name');
+        const gpuRes: string = await tauriApi.invoke('get_gpu_name');
 
         if (isMounted) {
           const gpuArray = gpuRes.split('+').map((g: string) => g.trim());
@@ -96,7 +97,7 @@ export const JoinerTab: React.FC<JoinerTabProps> = ({ joiner, t, isDark }) => {
         {joiner.videoList.length === 0 ? (
           <div 
             onClick={async () => {
-              const path = await window.electron.ipcRenderer.invoke('open-folder-dialog');
+              const path = await tauriApi.invoke<string | null>('open_folder_dialog');
               if (path) joiner.scanDirectory(path);
             }} 
             className="w-full h-full flex flex-col items-center justify-center cursor-pointer relative z-10"
@@ -119,7 +120,7 @@ export const JoinerTab: React.FC<JoinerTabProps> = ({ joiner, t, isDark }) => {
               </div>
               <button 
                 onClick={async () => { 
-                  const path = await window.electron.ipcRenderer.invoke('open-folder-dialog'); 
+              const path = await tauriApi.invoke<string | null>('open_folder_dialog');
                   if (path) joiner.scanDirectory(path); 
                 }} 
                 className={`text-xs font-bold px-5 py-2.5 rounded-xl border hover:shadow-md transition-all active:scale-95 ${isDark ? 'bg-zinc-800 hover:bg-zinc-700 border-zinc-700 text-zinc-200' : 'bg-white hover:bg-zinc-50 border-zinc-200 text-zinc-700'}`}
@@ -250,7 +251,7 @@ export const JoinerTab: React.FC<JoinerTabProps> = ({ joiner, t, isDark }) => {
               <label className={`text-[11px] font-black uppercase tracking-widest ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`}>ĐÓNG DẤU LOGO</label>
               <div className="flex items-center gap-2 w-full">
                 <input type="text" readOnly value={joiner.logoPath || "No Logo Mode"} className={`flex-1 border rounded-xl px-3 py-1.5 text-xs font-medium truncate focus:outline-none min-w-0 shadow-inner ${isDark ? 'bg-[#0f0f12] border-zinc-800' : 'bg-zinc-50 border-zinc-200'}`} />
-                <button onClick={async () => { const path = await window.electron.ipcRenderer.invoke('open-logo-dialog'); if (path) joiner.setLogoPath(path); }} className={`text-xs font-bold px-3 py-1.5 rounded-xl border transition-all active:scale-95 ${isDark ? 'bg-zinc-800 border-zinc-700 hover:bg-zinc-700 text-zinc-200' : 'bg-white border-zinc-200 hover:bg-zinc-50 text-zinc-700'}`}>Chọn</button>
+                <button onClick={async () => { const path = await tauriApi.invoke<string | null>('open_logo_dialog'); if (path) joiner.setLogoPath(path); }} className={`text-xs font-bold px-3 py-1.5 rounded-xl border transition-all active:scale-95 ${isDark ? 'bg-zinc-800 border-zinc-700 hover:bg-zinc-700 text-zinc-200' : 'bg-white border-zinc-200 hover:bg-zinc-50 text-zinc-700'}`}>Chọn</button>
                 {joiner.logoPath && <button onClick={() => joiner.setLogoPath('')} className="text-xs text-red-500 font-bold px-2 py-1.5 shrink-0 bg-red-500/10 hover:bg-red-500/20 rounded-xl transition-colors">✕</button>}
               </div>
             </div>
@@ -277,7 +278,7 @@ export const JoinerTab: React.FC<JoinerTabProps> = ({ joiner, t, isDark }) => {
 
           <div className={`flex items-center gap-3 border-t pt-4 mt-1 ${isDark ? 'border-zinc-800' : 'border-zinc-400'}`}>
             <input type="text" readOnly value={joiner.outputFolder || "Lưu cùng thư mục đầu vào (Mặc định)"} className={`flex-1 border rounded-xl px-3 py-1.5 text-xs font-medium truncate focus:outline-none shadow-inner ${isDark ? 'bg-[#0f0f12] border-zinc-800 text-zinc-400' : 'bg-zinc-50 border-zinc-200 text-zinc-500'}`} />
-            <button onClick={async () => { const path = await window.electron.ipcRenderer.invoke('open-folder-dialog'); if (path) joiner.setOutputFolder(path); }} className={`text-xs font-bold px-4 py-1.5 rounded-xl border transition-all active:scale-95 ${isDark ? 'bg-zinc-800 border-zinc-700 hover:bg-zinc-700 text-zinc-200' : 'bg-white border-zinc-200 hover:bg-zinc-50 text-zinc-700'}`}>Đổi nơi lưu</button>
+            <button onClick={async () => { const path = await tauriApi.invoke<string | null>('open_folder_dialog'); if (path) joiner.setOutputFolder(path); }} className={`text-xs font-bold px-4 py-1.5 rounded-xl border transition-all active:scale-95 ${isDark ? 'bg-zinc-800 border-zinc-700 hover:bg-zinc-700 text-zinc-200' : 'bg-white border-zinc-200 hover:bg-zinc-50 text-zinc-700'}`}>Đổi nơi lưu</button>
           </div>
         </div>
 

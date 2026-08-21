@@ -1,5 +1,6 @@
 /* eslint-disable */
 import React from 'react'
+import { tauriApi } from '../utils/tauriAdapter'
 
 export const TtsTab: React.FC<{ tts: any, t: any, colors: any }> = ({ tts, t, colors }) => (
   <div className={`w-full flex-1 border rounded-3xl p-8 flex flex-col gap-5 overflow-y-auto select-none ${colors.c_bgPanel}`}>
@@ -13,7 +14,7 @@ export const TtsTab: React.FC<{ tts: any, t: any, colors: any }> = ({ tts, t, co
       </div>
       <div className="flex flex-col gap-2">
         <label className="text-sm font-semibold">{t('ttsStep2')}</label>
-        <div className="flex items-center gap-2 w-full"><input type="text" readOnly value={tts.ttsFolder || t('dlDefaultDir')} className={`flex-1 border rounded-xl px-4 py-3 text-sm truncate focus:outline-none ${colors.c_bgInput}`} /><button onClick={async () => { const path = await window.electron.ipcRenderer.invoke('open-folder-dialog'); if (path) tts.setTtsFolder(path); }} className={`border text-sm font-bold px-4 py-3 rounded-xl transition-colors shrink-0 ${colors.c_btnSec}`}>{t('btnChooseFolder')}</button></div>
+        <div className="flex items-center gap-2 w-full"><input type="text" readOnly value={tts.ttsFolder || t('dlDefaultDir')} className={`flex-1 border rounded-xl px-4 py-3 text-sm truncate focus:outline-none ${colors.c_bgInput}`} /><button onClick={async () => { const path = await tauriApi.invoke<string | null>('open_folder_dialog'); if (path) tts.setTtsFolder(path); }} className={`border text-sm font-bold px-4 py-3 rounded-xl transition-colors shrink-0 ${colors.c_btnSec}`}>{t('btnChooseFolder')}</button></div>
       </div>
     </div>
     <div className="flex flex-col gap-2 w-full flex-1 min-h-[150px]">

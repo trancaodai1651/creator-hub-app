@@ -71,10 +71,77 @@ fn detect_gpu_encoder(ffmpeg_exe: &Path) -> String {
     "libx264".to_string() 
 }
 
+fn sidecar_output_error(output: &[u8], fallback: &str) -> String {
+    let message = String::from_utf8_lossy(output).trim().to_string();
+    if message.is_empty() { fallback.to_string() } else { message }
+}
+
+fn is_youtube_url(url: &str) -> bool {
+    let lower = url.to_lowercase();
+    lower.contains("youtube.com") || lower.contains("youtu.be")
+}
+
+fn add_youtube_runtime_args(args: &mut Vec<String>, url: &str, deno_exe: &Path, embedded_fallback: bool) {
+    if deno_exe.exists() {
+        args.push("--js-runtimes".to_string());
+        args.push(format!("deno:{}", deno_exe.to_string_lossy()));
+        args.push("--remote-components".to_string());
+        args.push("ejs:github".to_string());
+    }
+
+    if is_youtube_url(url) {
+        args.push("--extractor-args".to_string());
+        args.push(if embedded_fallback {
+            "youtube:player_client=web_embedded".to_string()
+        } else {
+            "youtube:player_client=default,-android_sdkless".to_string()
+        });
+    }
+}
+
+fn build_download_args(
+    url: &str,
+    output_template: &str,
+    ffmpeg_location: &str,
+    format_filter: &str,
+    merge_format: &str,
+    deno_exe: &Path,
+    embedded_fallback: bool,
+) -> Vec<String> {
+    let mut args = vec![
+        url.to_string(), "-o".to_string(), output_template.to_string(),
+        "--ffmpeg-location".to_string(), ffmpeg_location.to_string(),
+        "-f".to_string(), format_filter.to_string(),
+        "--merge-output-format".to_string(), merge_format.to_string(),
+        "--newline".to_string(),
+        "--no-warnings".to_string(),
+        "--no-update".to_string(),
+        "--ignore-config".to_string(),
+        "--no-playlist".to_string(),
+        "--retries".to_string(), "5".to_string(),
+        "--fragment-retries".to_string(), "5".to_string(),
+        "--file-access-retries".to_string(), "3".to_string(),
+        "--windows-filenames".to_string(),
+    ];
+    add_youtube_runtime_args(&mut args, url, deno_exe, embedded_fallback);
+    args
+}
+
 #[tauri::command]
 pub async fn get_video_info(app: AppHandle, url: String) -> Result<Value, String> {
     let sidecar = app.shell().sidecar("yt-dlp").map_err(|e| e.to_string())?;
-    let output = sidecar.args(["--dump-single-json", "--flat-playlist", &url]).output().await.map_err(|e| e.to_string())?;
+    let resource_dir = app.path().resource_dir().map_err(|e| e.to_string())?;
+    let deno_exe = resource_dir.join("resources").join("deno.exe");
+    let mut info_args = vec![
+        "--dump-single-json".to_string(), "--flat-playlist".to_string(),
+        "--no-warnings".to_string(), "--no-update".to_string(),
+        "--ignore-config".to_string(), url.clone()
+    ];
+    add_youtube_runtime_args(&mut info_args, &url, &deno_exe, false);
+    let output = sidecar.args(info_args).output().await.map_err(|e| e.to_string())?;
+    if !output.status.success() {
+        return Err(format!("yt-dlp could not read video info: {}", sidecar_output_error(&output.stderr, "unknown extractor error")));
+    }
     
     let stdout_str = String::from_utf8_lossy(&output.stdout);
     let metadata: Value = serde_json::from_str(&stdout_str).map_err(|e| e.to_string())?;
@@ -132,7 +199,6 @@ pub async fn download_video(
     end_time: String,
     use_gpu: Option<bool>, 
 ) -> Result<Value, String> {
-    let sidecar = app.shell().sidecar("yt-dlp").map_err(|e| e.to_string())?;
     let resource_dir = app.path().resource_dir().map_err(|e| e.to_string())?;
     let ffmpeg_exe = resource_dir.join("resources").join(if cfg!(target_os = "windows") { "ffmpeg.exe" } else { "ffmpeg" });
     let ffmpeg_location_str = resource_dir.join("resources").to_string_lossy().to_string();
@@ -158,42 +224,88 @@ pub async fn download_video(
             format_filter = "bv*[vcodec^=avc]+ba[ext=m4a]/b[vcodec^=avc]/b".to_string();
         }
     } else if resolution != "best" {
-        format_filter = format!("bv*[height<={}] + ba/b", resolution);
+        format_filter = format!("bv*[height<={}]+ba/b", resolution);
     }
 
     let merge_format = if is_light { "mp4" } else { "mkv" };
 
-    let (mut rx, mut _child) = sidecar
-        .args([
-            &url, "-o", &output_template, 
-            "--ffmpeg-location", &ffmpeg_location_str,
-            "-f", &format_filter,
-            "--merge-output-format", merge_format
-        ])
-        .spawn()
-        .map_err(|e| e.to_string())?;
-
     let app_clone = app.clone();
-    let id_clone = id.clone();
+    let mut last_output = String::new();
+    let deno_exe = resource_dir.join("resources").join("deno.exe");
+    let mut embedded_fallback = false;
+    let mut download_failed: bool;
 
-    while let Some(event) = rx.recv().await {
-        if let tauri_plugin_shell::process::CommandEvent::Stdout(line) = event {
-            let text = String::from_utf8_lossy(&line).to_string();
-            if text.contains("[download]") && text.contains("%") {
-                if let Some(pct_idx) = text.find('%') {
-                    let start_search = &text[..pct_idx];
-                    if let Some(space_idx) = start_search.rfind(' ') {
-                        let pct_str = start_search[space_idx..].trim();
-                        if let Ok(percent_val) = pct_str.parse::<f64>() {
-                            let factor = if is_light { 0.9 } else { 0.7 };
-                            let display_percent = (percent_val * factor) as u32;
-                            let msg_key = if is_light { "dl_msg_downloading_light" } else { "dl_msg_downloading_hq" };
-                            let _ = app_clone.emit("download-progress", json!({ "id": id_clone, "percent": display_percent, "msgKey": msg_key }));
+    loop {
+        let sidecar = app.shell().sidecar("yt-dlp").map_err(|e| e.to_string())?;
+        let args = build_download_args(
+            &url,
+            &output_template,
+            &ffmpeg_location_str,
+            &format_filter,
+            merge_format,
+            &deno_exe,
+            embedded_fallback,
+        );
+        let (mut rx, mut _child) = sidecar.args(args).spawn().map_err(|e| e.to_string())?;
+        let mut terminated = false;
+        let mut attempt_failed = false;
+
+        while let Some(event) = rx.recv().await {
+            match event {
+                tauri_plugin_shell::process::CommandEvent::Stdout(line) |
+                tauri_plugin_shell::process::CommandEvent::Stderr(line) => {
+                    let text = String::from_utf8_lossy(&line).to_string();
+                    if !text.trim().is_empty() { last_output = text.trim().to_string(); }
+                    if text.contains("[download]") && text.contains("%") {
+                        if let Some(pct_idx) = text.find('%') {
+                            let start_search = &text[..pct_idx];
+                            if let Some(space_idx) = start_search.rfind(' ') {
+                                let pct_str = start_search[space_idx..].trim();
+                                if let Ok(percent_val) = pct_str.parse::<f64>() {
+                                    let factor = if is_light { 0.9 } else { 0.7 };
+                                    let display_percent = (percent_val * factor) as u32;
+                                    let msg_key = if is_light { "dl_msg_downloading_light" } else { "dl_msg_downloading_hq" };
+                                    let _ = app_clone.emit("download-progress", json!({ "id": id, "percent": display_percent, "msgKey": msg_key }));
+                                }
+                            }
                         }
                     }
                 }
+                tauri_plugin_shell::process::CommandEvent::Error(error) => {
+                    last_output = error.to_string();
+                    attempt_failed = true;
+                }
+                tauri_plugin_shell::process::CommandEvent::Terminated(payload) => {
+                    terminated = true;
+                    attempt_failed = payload.code.unwrap_or(1) != 0;
+                }
+                _ => {}
             }
         }
+
+        if !terminated {
+            attempt_failed = true;
+            if last_output.is_empty() { last_output = "yt-dlp process ended unexpectedly".to_string(); }
+        }
+        if !attempt_failed {
+            download_failed = false;
+            break;
+        }
+
+        download_failed = true;
+        let should_retry_embedded = !embedded_fallback
+            && is_youtube_url(&url)
+            && last_output.to_lowercase().contains("403");
+        if !should_retry_embedded { break; }
+
+        embedded_fallback = true;
+        let _ = fs::remove_dir_all(&temp_dir);
+        fs::create_dir_all(&temp_dir).map_err(|e| e.to_string())?;
+    }
+
+    if download_failed {
+        let _ = fs::remove_dir_all(&temp_dir);
+        return Err(format!("yt-dlp download failed: {}", sidecar_output_error(last_output.as_bytes(), "unknown download error")));
     }
 
     let entries = fs::read_dir(&temp_dir).map_err(|e| e.to_string())?;
@@ -207,12 +319,23 @@ pub async fn download_video(
         }
     }
 
-    let downloaded_file_path = downloaded_file.ok_or_else(|| "Không tìm thấy tệp tin video tải về.".to_string())?;
+    let downloaded_file_path = downloaded_file.ok_or_else(|| format!("yt-dlp finished without a video file: {}", sidecar_output_error(last_output.as_bytes(), "no output file")))?;
     let file_stem = downloaded_file_path.file_stem().unwrap_or_default().to_string_lossy().to_string();
     let final_file_name = if is_light { format!("{}.mp4", file_stem) } else { format!("{}_premiere.mp4", file_stem) };
     let final_file_path = get_unique_file_path(&final_save_dir_buf, &final_file_name);
 
     let need_cut = !start_time.trim().is_empty() && !end_time.trim().is_empty();
+
+    // yt-dlp already merged the fast path into an MP4. Copy it directly so a
+    // second FFmpeg pass cannot turn a successful download into a false error.
+    if is_light && !need_cut {
+        fs::copy(&downloaded_file_path, &final_file_path)
+            .map_err(|error| format!("could not save downloaded video: {}", error))?;
+        let _ = fs::remove_dir_all(&temp_dir);
+        let _ = app.emit("download-progress", json!({ "id": id, "percent": 100, "msgKey": "dl_msg_done" }));
+        return Ok(json!({ "success": true, "path": final_file_path.to_string_lossy().to_string() }));
+    }
+
     let gpu_enabled = use_gpu.unwrap_or(true);
     let encoder = if gpu_enabled { detect_gpu_encoder(&ffmpeg_exe) } else { "libx264".to_string() };
 

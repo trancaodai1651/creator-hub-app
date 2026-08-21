@@ -4,28 +4,20 @@ export interface TabItem {
   nameKey: string
   descKey: string
   icon: string
-  isWip?: boolean // Bổ sung cờ hiệu (Dấu ? để không bắt buộc phải ghi ở thẻ Home)
+  isWip?: boolean
 }
 
 export const SIDEBAR_TABS: TabItem[] = [
-  { id: 'home', nameKey: 'dashboard', descKey: '', icon: '🏠' },
-  
-  // ==========================================
-  // 🟢 CÁC TÍNH NĂNG ĐÃ HOÀN THIỆN (Sẵn sàng dùng)
-  // ==========================================
-  { id: 'joiner', nameKey: 'videoJoiner', descKey: 'descJoiner', icon: '🎬', isWip: false },
-  { id: 'downloader', nameKey: 'videoDownloader', descKey: 'descDownloader', icon: '📥', isWip: false },
-
-  // ==========================================
-  // 🟠 CÁC TÍNH NĂNG ĐANG PHÁT TRIỂN (Hiện huy hiệu DEV)
-  // ==========================================
-  { id: 'publisher', nameKey: 'pubTitle', descKey: 'pubSub', icon: '🚀', isWip: false },
-  { id: 'converter', nameKey: 'fileConverter', descKey: 'descConverter', icon: '⚡', isWip: false },
-  { id: 'tts', nameKey: 'appTts', descKey: 'descTts', icon: '🗣️', isWip: false },
-  { id: 'renamer', nameKey: 'fileRenamer', descKey: 'descRenamer', icon: '🗂️', isWip: false },
-  { id: 'installer', nameKey: 'appInstaller', descKey: 'descInstaller', icon: '🛠️', isWip: false },
-  { id: 'uninstaller', nameKey: 'uninstaller', descKey: 'descUninstaller', icon: '❌', isWip: false },
-  { id: 'cleaner', nameKey: 'cleaner', descKey: 'descCleaner', icon: '🧹', isWip: false },
-  { id: 'chatbot', icon: '🤖', nameKey: 'tabChatbot', descKey: 'descChatbot', isWip: false },
-  { id: 'guide', icon: '📚', nameKey: 'tabGuide', descKey: 'descGuide', isWip: false }
+  { id: 'home', nameKey: 'dashboard', descKey: '', icon: '\u{1F3E0}' },
+  { id: 'joiner', nameKey: 'videoJoiner', descKey: 'descJoiner', icon: '\u{1F3AC}', isWip: false },
+  { id: 'downloader', nameKey: 'videoDownloader', descKey: 'descDownloader', icon: '\u{1F4E5}', isWip: false },
+  { id: 'publisher', nameKey: 'pubTitle', descKey: 'pubSub', icon: '\u{1F680}', isWip: true },
+  { id: 'converter', nameKey: 'fileConverter', descKey: 'descConverter', icon: '\u{26A1}', isWip: true },
+  { id: 'tts', nameKey: 'appTts', descKey: 'descTts', icon: '\u{1F5E3}\u{FE0F}', isWip: true },
+  { id: 'renamer', nameKey: 'fileRenamer', descKey: 'descRenamer', icon: '\u{1F5C2}\u{FE0F}', isWip: true },
+  { id: 'installer', nameKey: 'appInstaller', descKey: 'descInstaller', icon: '\u{1F6E0}\u{FE0F}', isWip: true },
+  { id: 'uninstaller', nameKey: 'uninstaller', descKey: 'descUninstaller', icon: '\u{274C}', isWip: true },
+  { id: 'cleaner', nameKey: 'cleaner', descKey: 'descCleaner', icon: '\u{1F9F9}', isWip: true },
+  { id: 'chatbot', icon: '\u{1F916}', nameKey: 'tabChatbot', descKey: 'descChatbot', isWip: true },
+  { id: 'guide', icon: '\u{1F4DA}', nameKey: 'tabGuide', descKey: 'descGuide', isWip: false }
 ]

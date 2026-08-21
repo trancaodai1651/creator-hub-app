@@ -1,7 +1,6 @@
 /* eslint-disable */
 import { useState, useEffect, useRef } from 'react'
-import { invoke } from '@tauri-apps/api/core'
-import { listen } from '@tauri-apps/api/event'
+import { tauriApi } from '../utils/tauriAdapter'
 
 export interface DownloadTask {
   id: string; url: string; title: string; thumbnail: string;
@@ -13,6 +12,7 @@ export interface DownloadTask {
   platform: { name: string, bg: string, text: string }; 
   isLight: boolean; 
   localPath?: string;
+  errorMessage?: string;
 }
 
 const getPlatformData = (url: string) => {
@@ -24,6 +24,17 @@ const getPlatformData = (url: string) => {
   if (lowerUrl.includes('facebook.com') || lowerUrl.includes('fb.watch')) return { name: 'Facebook', bg: 'bg-blue-500/10 dark:bg-blue-500/20', text: 'text-blue-600 dark:text-blue-400' };
   if (lowerUrl.includes('instagram.com')) return { name: 'Instagram', bg: 'bg-fuchsia-500/10 dark:bg-fuchsia-500/20', text: 'text-fuchsia-600 dark:text-fuchsia-400' };
   return { name: 'Web Video', bg: 'bg-emerald-500/10 dark:bg-emerald-500/20', text: 'text-emerald-600 dark:text-emerald-400' };
+}
+
+const getErrorMessage = (error: unknown) => {
+  if (error instanceof Error) return error.message;
+  if (typeof error === 'string') return error;
+  if (error && typeof error === 'object') {
+    const value = error as { message?: unknown; error?: unknown };
+    if (typeof value.message === 'string') return value.message;
+    if (typeof value.error === 'string') return value.error;
+  }
+  return String(error || 'Unknown download error');
 }
 
 export function useDownloader(t: any, setCustomModal: any) {
@@ -43,22 +54,20 @@ export function useDownloader(t: any, setCustomModal: any) {
   useEffect(() => { queueRef.current = queue; }, [queue]);
 
   useEffect(() => {
-    let unlistenFn: () => void;
+    let unlistenFn: (() => void) | undefined;
     const setupListener = async () => {
-      unlistenFn = await listen('download-progress', (event: any) => {
-        const data = event.payload as { id: string, msgKey: string, percent: number };
-        setQueue(prev => prev.map(task => {
-          if (task.id === data.id) {
-            return { 
-              ...task, 
-              percent: data.percent, 
-              msgKey: data.msgKey,
-              status: data.percent === 100 ? 'success' : 'downloading'
-            }
-          }
-          return task;
-        }))
-      });
+      try {
+        unlistenFn = await tauriApi.on('download-progress', (data: { id: string, msgKey: string, percent: number }) => {
+          setQueue(prev => prev.map(task => task.id === data.id ? {
+            ...task,
+            percent: data.percent,
+            msgKey: data.msgKey,
+            status: data.percent === 100 ? 'success' : 'downloading'
+          } : task))
+        })
+      } catch {
+        // The browser preview has no native event bridge.
+      }
     }
     setupListener();
     return () => { if (unlistenFn) unlistenFn(); }
@@ -80,15 +89,15 @@ export function useDownloader(t: any, setCustomModal: any) {
     setSearchResults([]);
     
     try {
-      const res: any = await invoke('search_video', { keyword: query.trim(), limit: 10 });
-      if (res.success) {
-        setSearchResults(res.results);
+      const res: any = await tauriApi.invoke('search_video', { keyword: query.trim(), limit: 10 });
+      if (res?.success) {
+        setSearchResults(res.results || []);
       } else {
-        setCustomModal({ show: true, title: 'Lỗi Tìm Kiếm', message: res.message });
+        setCustomModal({ show: true, title: 'Lỗi Tìm Kiếm', message: res?.message || res?.error || 'Search failed' });
         setShowSearchModal(false);
       }
     } catch (err: any) {
-      setCustomModal({ show: true, title: 'Lỗi Hệ Thống', message: String(err) });
+      setCustomModal({ show: true, title: 'Lỗi Hệ Thống', message: getErrorMessage(err) });
       setShowSearchModal(false);
     } finally {
       setIsSearching(false);
@@ -106,8 +115,8 @@ export function useDownloader(t: any, setCustomModal: any) {
     }])
 
     try {
-      const info: any = await invoke('get_video_info', { url: targetUrl })
-      if (info.success && info.isPlaylist) {
+      const info: any = await tauriApi.invoke('get_video_info', { url: targetUrl })
+      if (info?.success && info.isPlaylist) {
         setQueue(prev => prev.filter(t => t.id !== tempId));
         const playlistTasks: DownloadTask[] = info.entries.map((entry: any) => ({
           id: crypto.randomUUID(), url: entry.url, title: entry.title, thumbnail: entry.thumbnail,
@@ -118,16 +127,22 @@ export function useDownloader(t: any, setCustomModal: any) {
         setQueue(prev => [...prev, ...playlistTasks]);
       } else {
         setQueue(prev => prev.map(task => {
-          if (task.id === tempId) {
-            return info.success 
-              ? { ...task, status: 'idle', msgKey: 'dlStatusIdle', title: info.title, thumbnail: info.thumbnail, availableResolutions: info.availableResolutions || ['best'] } 
-              : { ...task, title: 'Lỗi không lấy được thông tin video hoặc link bảo mật', status: 'error', msgKey: 'dl_msg_error' }
+          if (task.id !== tempId) return task;
+          if (info?.success) {
+            return { ...task, status: 'idle', msgKey: 'dlStatusIdle', title: info.title, thumbnail: info.thumbnail, availableResolutions: info.availableResolutions || ['best'] };
           }
-          return task;
+          return {
+            ...task,
+            title: 'Lỗi không lấy được thông tin video hoặc link bảo mật',
+            status: 'error',
+            msgKey: 'dl_msg_error',
+            errorMessage: info?.message || info?.error || 'yt-dlp returned no video metadata'
+          };
         }))
       }
     } catch (error) {
-      setQueue(prev => prev.map(task => task.id === tempId ? { ...task, title: 'Lỗi kết nối máy chủ tải', status: 'error', msgKey: 'dl_msg_error' } : task));
+      const errorMessage = getErrorMessage(error)
+      setQueue(prev => prev.map(task => task.id === tempId ? { ...task, title: 'Lỗi kết nối máy chủ tải', status: 'error', msgKey: 'dl_msg_error', errorMessage } : task));
     }
   }
 
@@ -175,10 +190,17 @@ export function useDownloader(t: any, setCustomModal: any) {
     isRunningRef.current = true;
     let successCount = 0;
     let totalTasksRun = 0;
+    const failureMessages: string[] = [];
     
-    while (isRunningRef.current) {
-      const nextTask = queueRef.current.find(t => t.status === 'idle' || t.status === 'error');
-      if (!nextTask) break;
+    const taskIdsToRun = queueRef.current
+      .filter(task => task.status === 'idle' || task.status === 'error')
+      .map(task => task.id);
+
+    for (const taskId of taskIdsToRun) {
+      if (!isRunningRef.current) break;
+
+      const nextTask = queueRef.current.find(task => task.id === taskId);
+      if (!nextTask || (nextTask.status !== 'idle' && nextTask.status !== 'error')) continue;
 
       totalTasksRun++;
       setQueue(prev => prev.map(t => t.id === nextTask.id ? { ...t, status: 'downloading', percent: 0, msgKey: 'dl_msg_starting' } : t));
@@ -187,20 +209,24 @@ export function useDownloader(t: any, setCustomModal: any) {
       const endString = nextTask.endMin || nextTask.endSec ? `${nextTask.endMin || '00'}:${nextTask.endSec || '00'}` : '';
 
       try {
-        const res: any = await invoke('download_video', { 
-          id: nextTask.id, url: nextTask.url, saveDir: downloadFolder, 
-          isLight: nextTask.isLight, resolution: nextTask.selectedResolution, 
-          startTime: startString, endTime: endString 
+        const res: any = await tauriApi.invoke('download_video', {
+          id: nextTask.id, url: nextTask.url, saveDir: downloadFolder,
+          isLight: nextTask.isLight, resolution: nextTask.selectedResolution,
+          startTime: startString, endTime: endString, useGpu: true
         });
         
-        if (res.success) { 
+        if (res?.success) {
           successCount++; 
           setQueue(prev => prev.map(t => t.id === nextTask.id ? { ...t, status: 'success', percent: 100, msgKey: 'dlStatusSuccess', localPath: res.path } : t)) 
-        } else { 
-          setQueue(prev => prev.map(t => t.id === nextTask.id ? { ...t, status: 'error', msgKey: 'dl_msg_error' } : t)) 
+        } else {
+          const errorMessage = res?.message || res?.error || 'Download failed';
+          failureMessages.push(`${nextTask.title}: ${errorMessage}`);
+          setQueue(prev => prev.map(t => t.id === nextTask.id ? { ...t, status: 'error', msgKey: 'dl_msg_error', errorMessage } : t))
         }
-      } catch (err) { 
-        setQueue(prev => prev.map(t => t.id === nextTask.id ? { ...t, status: 'error', msgKey: 'dl_msg_error' } : t)) 
+      } catch (err: any) {
+        const errorMessage = getErrorMessage(err);
+        failureMessages.push(`${nextTask.title}: ${errorMessage}`);
+        setQueue(prev => prev.map(t => t.id === nextTask.id ? { ...t, status: 'error', msgKey: 'dl_msg_error', errorMessage } : t))
       }
     }
     
@@ -208,7 +234,12 @@ export function useDownloader(t: any, setCustomModal: any) {
     isRunningRef.current = false;
 
     if (totalTasksRun > 0) {
-      setCustomModal({ show: true, title: 'Hoàn tất tiến trình', message: `Đã tải xuống thành công ${successCount}/${totalTasksRun} video.` });
+      const summary = `Đã tải xuống thành công ${successCount}/${totalTasksRun} video.`;
+      setCustomModal({
+        show: true,
+        title: 'Hoàn tất tiến trình',
+        message: failureMessages.length > 0 ? `${summary}\n\n${failureMessages.join('\n')}` : summary
+      });
     }
   }
 
@@ -220,7 +251,7 @@ export function useDownloader(t: any, setCustomModal: any) {
   const handlePlayVideo = async (localPath: string) => {
     if (!localPath) return;
     try {
-      await invoke('open_video_native', { path: localPath });
+      await tauriApi.invoke('open_video_native', { path: localPath });
     } catch (err) {
       alert(String(err));
     }

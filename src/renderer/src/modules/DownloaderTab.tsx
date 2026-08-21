@@ -1,11 +1,11 @@
 /* eslint-disable */
 import React, { useState } from 'react'
+import { tauriApi } from '../utils/tauriAdapter'
 
 interface DownloaderTabProps {
   dl: any;
   t: any;
   colors: any;
-  isDark: boolean;
 }
 
 const SUPPORTED_PLATFORMS = [
@@ -19,7 +19,7 @@ const SUPPORTED_PLATFORMS = [
   { name: 'Vimeo', color: 'text-blue-400', path: 'M22.4 7.2c-.1 2-1.5 4.8-4.2 8.3-2.9 3.7-5.3 5.5-7.2 5.5-1.2 0-2.2-1.1-3.1-3.4-.6-2.1-1.1-4.1-1.7-6.2-.6-2.5-1.3-3.2-2.1-3.2-.2 0-.6.3-1.3.8l-1.1-1.4c1.1-1 2.2-2.1 3.5-3.2 1.6-1.5 2.9-2.3 3.8-2.5 1.8-.4 2.9.4 3.4 2.2.5 2.1.8 3.6 1 4.8.4 2.5.9 3.8 1.5 3.8.5 0 1.2-.7 2.1-2.2.9-1.5 1.4-2.7 1.5-3.6.2-1.7-1.1-2.5-3.8-2.5 1.4-4.5 4.8-5.3 10.2-2.5.8.3 1.2 1.1 1.3 2.2z' }
 ];
 
-export const DownloaderTab: React.FC<DownloaderTabProps> = ({ dl, t, colors, isDark }) => {
+export const DownloaderTab: React.FC<DownloaderTabProps> = ({ dl, t, colors }) => {
   const [showGuide, setShowGuide] = useState(false);
 
   const safeT = (key: string, fallback: string): string => {
@@ -62,46 +62,46 @@ export const DownloaderTab: React.FC<DownloaderTabProps> = ({ dl, t, colors, isD
           <h2 className="text-2xl font-black tracking-tight drop-shadow-sm flex items-center gap-2">
             <span className="text-[28px] drop-shadow-md transform-gpu hover:scale-110 transition-transform">📥</span> {safeT('dlTitle', 'Trình Tải Video')}
           </h2>
-          <button onClick={() => setShowGuide(true)} className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-[11px] font-black uppercase transition-all shadow-sm active:scale-95 border ${colors.c_bgPanel} ${colors.c_borderT} hover:bg-zinc-500/10`}>
+          <button onClick={() => setShowGuide(true)} data-glass-hover className={`glass-button glass-hover flex items-center gap-2 px-3.5 py-2 rounded-xl text-[11px] font-black uppercase active:scale-95 border ${colors.c_borderT}`}>
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
             {safeT('dlGuideBtn', 'Cẩm nang')}
           </button>
         </div>
 
-        <div className={`flex flex-col xl:flex-row gap-3 p-3 rounded-2xl shadow-sm border transition-all ${colors.c_bgPanel} ${colors.c_borderT}`}>
+        <div className={`glass-panel flex flex-col xl:flex-row gap-3 p-3 rounded-2xl border transition-all ${colors.c_borderT}`}>
           
           <div className="flex-1 flex items-center gap-3">
-            <button onClick={dl.handleAddFromClipboard} title={safeT('dlPasteTooltip', 'Dán link')} className="shrink-0 bg-gradient-to-br from-rose-500 to-red-600 hover:from-rose-400 hover:to-red-500 text-white w-12 h-12 rounded-xl flex items-center justify-center transition-all active:scale-95 shadow-md shadow-rose-500/20 border border-transparent">
+          <button onClick={dl.handleAddFromClipboard} title={safeT('dlPasteTooltip', 'Dán link')} className="liquid-accent shrink-0 bg-gradient-to-br from-rose-500 to-red-600 hover:from-rose-400 hover:to-red-500 text-white w-12 h-12 rounded-xl flex items-center justify-center transition-all active:scale-95 shadow-md shadow-rose-500/20 border border-transparent">
               <svg className="w-5 h-5 drop-shadow-sm" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
             </button>
             
-            <div className={`flex-1 flex items-center h-12 rounded-xl px-4 border transition-all focus-within:ring-2 focus-within:ring-rose-500/20 focus-within:border-rose-500/50 ${colors.c_bgInput} ${colors.c_borderT}`}>
+            <div data-glass-hover className={`glass-input glass-hover flex-1 flex items-center h-12 rounded-xl px-4 border transition-all focus-within:ring-2 focus-within:ring-rose-500/20 focus-within:border-rose-500/50 ${colors.c_borderT}`}>
               <svg className="w-5 h-5 opacity-40 mr-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
               <input type="text" value={dl.searchInput} onChange={(e) => dl.setSearchInput(e.target.value)} onKeyDown={handleInputKeyDown} spellCheck={false} placeholder={safeT('dlInputPlaceholder', 'Dán link hoặc tìm kiếm...')} className="flex-1 bg-transparent text-[13px] font-bold focus:outline-none placeholder:opacity-40 h-full text-current" />
             </div>
           </div>
 
-          <div className={`flex items-center gap-4 px-4 h-12 rounded-xl border ${colors.c_bgInput} ${colors.c_borderT}`}>
-            <div className={`flex items-center gap-3 ${dl.isProcessing ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:opacity-70 transition-opacity'}`} onClick={async () => { if(!dl.isProcessing){ const path = await window.electron.ipcRenderer.invoke('open-folder-dialog'); if (path) dl.setDownloadFolder(path); }}}>
+          <div data-glass-hover className={`glass-input glass-hover flex flex-col gap-3 rounded-xl border px-3 py-2 sm:flex-row sm:items-center sm:gap-4 sm:px-4 sm:py-0 sm:h-12 ${colors.c_borderT}`}>
+            <button type="button" aria-label={safeT('dlChooseFolder', 'Chọn thư mục lưu')} className={`flex w-full items-center gap-3 border-0 bg-transparent p-0 text-left sm:w-auto ${dl.isProcessing ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:opacity-70 transition-opacity'}`} onClick={async () => { if(!dl.isProcessing){ const path = await tauriApi.invoke<string | null>('open_folder_dialog'); if (path) dl.setDownloadFolder(path); }}}>
               <div className="w-8 h-8 rounded-lg bg-black/5 dark:bg-white/10 flex items-center justify-center text-zinc-600 dark:text-zinc-300 text-base shadow-inner shrink-0">📁</div>
               <div className="flex flex-col justify-center">
                 <span className={`text-[9px] font-black uppercase tracking-widest opacity-50`}>{safeT('dlLabelSave', 'Lưu tại')}</span>
                 <span className="text-[11px] font-bold max-w-[120px] truncate opacity-90 mt-0.5">{dl.downloadFolder || safeT('dlDefaultDir', 'Mặc định (Downloads)')}</span>
               </div>
-            </div>
+            </button>
             
-            <div className="w-px h-6 bg-current opacity-10"></div>
+            <div className="hidden h-6 w-px bg-current opacity-10 sm:block"></div>
 
-            <label className="flex items-center gap-3 cursor-pointer group min-w-[145px]">
+            <label className="group flex w-full min-w-0 cursor-pointer items-center gap-3 sm:w-auto sm:min-w-[145px]">
               <div className="flex flex-col items-end justify-center w-full">
-                <span className={`text-[9px] font-black uppercase tracking-widest transition-colors ${dl.fastMode ? 'text-rose-500' : 'text-blue-500'}`}>{safeT('dlGlobalFastMode', 'Chế độ')}</span>
-                <span className={`text-[11px] font-black uppercase transition-colors mt-0.5 ${dl.fastMode ? 'text-rose-500' : 'text-blue-500'}`}>
+                <span className={`liquid-accent-text text-[9px] font-black uppercase tracking-widest transition-colors ${dl.fastMode ? 'text-rose-500' : 'text-blue-500'}`}>{safeT('dlGlobalFastMode', 'Chế độ')}</span>
+                <span className={`liquid-accent-text text-[11px] font-black uppercase transition-colors mt-0.5 ${dl.fastMode ? 'text-rose-500' : 'text-blue-500'}`}>
                   {dl.fastMode ? safeT('dlFastModeOn', '⚡ TẢI NHANH') : safeT('dlFastModeOff', '✨ CHẤT LƯỢNG CAO')}
                 </span>
               </div>
               <div className="relative flex items-center justify-center shrink-0">
                 <input type="checkbox" className="peer sr-only" checked={dl.fastMode} onChange={(e) => dl.toggleGlobalFastMode(e.target.checked)} />
-                <div className={`w-10 h-6 rounded-full transition-colors flex items-center px-1 border shrink-0 ${dl.fastMode ? 'bg-rose-500 border-rose-600' : 'bg-blue-600 border-blue-700'}`}>
+                <div className={`liquid-toggle w-10 h-6 rounded-full transition-colors flex items-center px-1 border shrink-0 ${dl.fastMode ? 'bg-rose-500 border-rose-600' : 'bg-blue-600 border-blue-700'}`}>
                   <span className="inline-block h-4 w-4 rounded-full bg-white transition-transform shadow-md" style={{ transform: dl.fastMode ? 'translateX(16px)' : 'translateX(0px)' }} />
                 </div>
               </div>
@@ -134,15 +134,15 @@ export const DownloaderTab: React.FC<DownloaderTabProps> = ({ dl, t, colors, isD
             </div>
           ) : (
             dl.queue.map((task: any) => (
-              <div key={task.id} className={`group hover-shine-effect relative flex flex-row items-center gap-3.5 p-2.5 mx-1.5 my-1 rounded-[20px] transition-all duration-300 ease-out shadow-sm hover:shadow-lg bg-clip-padding border overflow-hidden ${
+              <div key={task.id} data-glass-hover className={`group hover-shine-effect relative flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5 p-2.5 mx-1.5 my-1 rounded-[20px] transition-all duration-300 ease-out shadow-sm hover:shadow-lg bg-clip-padding border overflow-hidden ${
                 task.status === 'success' 
                   ? 'opacity-60 grayscale-[20%] border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50 hover:opacity-100 transition-opacity' 
                   : task.status === 'error' 
                     ? 'border-red-500/30 bg-red-500/5' 
-                    : `${colors.c_bgPanel} ${colors.c_borderT} hover:border-zinc-300 dark:hover:border-zinc-500 hover:-translate-y-0.5`
+                    : `glass-card glass-hover ${colors.c_borderT}`
               }`}>
                 
-                <div className="w-[144px] h-[81px] bg-black/5 dark:bg-white/5 rounded-[14px] overflow-hidden shrink-0 relative shadow-inner">
+                <div className="w-full sm:w-[144px] h-[160px] sm:h-[81px] bg-black/5 dark:bg-white/5 rounded-[14px] overflow-hidden shrink-0 relative shadow-inner">
                   {task.thumbnail ? <img src={task.thumbnail} alt="thumb" className="w-full h-full object-cover group-hover:scale-[1.05] transition-transform duration-500" /> : <div className="w-full h-full flex items-center justify-center text-[9px] animate-pulse opacity-40 font-bold uppercase tracking-widest">Đang tải...</div>}
                   
                   {task.status === 'success' && (
@@ -153,7 +153,7 @@ export const DownloaderTab: React.FC<DownloaderTabProps> = ({ dl, t, colors, isD
                   )}
                 </div>
                 
-                <div className="flex-1 flex flex-col min-w-0 justify-between h-[81px] py-0.5 relative z-10">
+                <div className={`flex-1 flex flex-col min-w-0 justify-between h-auto py-0.5 relative z-10 ${task.status === 'error' ? 'sm:min-h-[81px] sm:h-auto' : 'sm:h-[81px]'}`}>
                   
                   <div className="flex items-center justify-between gap-3 w-full pr-1">
                     <div className="flex items-center gap-2 overflow-hidden flex-1 min-w-0">
@@ -221,6 +221,9 @@ export const DownloaderTab: React.FC<DownloaderTabProps> = ({ dl, t, colors, isD
                       </div>
                     )}
                   </div>
+                  {task.status === 'error' && task.errorMessage && (
+                    <p className="mt-1 max-w-full whitespace-normal break-words text-[10px] font-semibold leading-snug text-red-500/80" title={task.errorMessage}>{task.errorMessage}</p>
+                  )}
                 </div>
               </div>
             ))
@@ -233,7 +236,7 @@ export const DownloaderTab: React.FC<DownloaderTabProps> = ({ dl, t, colors, isD
           <button 
             onClick={dl.handleStartBatch} 
             disabled={dl.queue.filter((t: any) => t.status === 'idle' || t.status === 'error').length === 0} 
-            className={`w-full font-black tracking-[0.2em] uppercase py-3.5 rounded-[16px] text-[13px] transition-all duration-300 flex items-center justify-center gap-2.5 shadow-xl ${dl.queue.filter((t: any) => t.status === 'idle' || t.status === 'error').length === 0 ? `opacity-50 cursor-not-allowed ${colors.c_bgInput}` : 'bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-white text-white dark:text-zinc-900 hover:shadow-md hover:-translate-y-0.5 active:translate-y-0'}`}
+            className={`download-action w-full font-black tracking-[0.2em] uppercase py-3.5 rounded-[16px] text-[13px] transition-all duration-300 flex items-center justify-center gap-2.5 shadow-xl ${dl.queue.filter((t: any) => t.status === 'idle' || t.status === 'error').length === 0 ? `opacity-50 cursor-not-allowed ${colors.c_bgInput}` : 'bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-white text-white dark:text-zinc-900 hover:shadow-md hover:-translate-y-0.5 active:translate-y-0'}`}
           >
             <svg className="w-5 h-5 drop-shadow-sm" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
             {safeT('dlBtnStart', 'BẮT ĐẦU TẢI XUỐNG')}
@@ -269,7 +272,7 @@ export const DownloaderTab: React.FC<DownloaderTabProps> = ({ dl, t, colors, isD
                 <div className="text-center py-20 opacity-50 font-bold">{safeT('dlSearchEmpty', 'Không tìm thấy kết quả.')}</div>
               ) : (
                 dl.searchResults?.map((res: any) => (
-                  <div key={res.id} onClick={() => { dl.addVideoToQueue(res.url); dl.setShowSearchModal(false); }} className={`flex gap-4 p-3 rounded-2xl border cursor-pointer hover:border-zinc-400 hover:shadow-md transition-all group ${colors.c_bgInput} ${colors.c_borderT}`}>
+                    <div key={res.id} onClick={() => { dl.addVideoToQueue(res.url); dl.setShowSearchModal(false); }} data-glass-hover className={`glass-card glass-hover flex gap-4 p-3 rounded-2xl border cursor-pointer transition-all group ${colors.c_borderT}`}>
                     <div className="w-40 h-24 bg-black/10 rounded-xl overflow-hidden relative shadow-inner">
                       {res.thumbnail && <img src={res.thumbnail} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />}
                       <span className="absolute bottom-1.5 right-1.5 bg-black/80 text-white text-[10px] font-bold px-2 py-0.5 rounded-md shadow-sm">{res.duration}</span>

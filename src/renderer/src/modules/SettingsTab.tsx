@@ -21,10 +21,10 @@ export const SettingsTab: React.FC<{
       <div className="flex flex-col gap-3 col-span-1">
         <label className="text-sm font-semibold flex items-center gap-2">🌐 {t('setLangLabel')}</label>
         <div className="grid grid-cols-2 gap-3 w-full">
-          <button onClick={() => cfg.setLanguage('vi')} className={`py-3.5 rounded-xl font-bold text-sm border transition-all ${cfg.language === 'vi' ? 'bg-red-500 border-red-600 text-white shadow-md shadow-red-500/10' : isDark ? 'bg-[#0a0a0a] border-[#333] text-zinc-300 hover:bg-zinc-800' : 'bg-zinc-50 border-zinc-300 text-zinc-700 hover:bg-zinc-200'}`}>
+          <button onClick={() => cfg.setLanguage('vi')} className={`py-3.5 rounded-xl font-bold text-sm border transition-all ${cfg.language === 'vi' ? 'liquid-accent text-white shadow-md' : isDark ? 'bg-[#0a0a0a] border-[#333] text-zinc-300 hover:bg-zinc-800' : 'bg-zinc-50 border-zinc-300 text-zinc-700 hover:bg-zinc-200'}`}>
             Việt Nam
           </button>
-          <button onClick={() => cfg.setLanguage('en')} className={`py-3.5 rounded-xl font-bold text-sm border transition-all ${cfg.language === 'en' ? 'bg-red-500 border-red-600 text-white shadow-md shadow-red-500/10' : isDark ? 'bg-[#0a0a0a] border-[#333] text-zinc-300 hover:bg-zinc-800' : 'bg-zinc-50 border-zinc-300 text-zinc-700 hover:bg-zinc-200'}`}>
+          <button onClick={() => cfg.setLanguage('en')} className={`py-3.5 rounded-xl font-bold text-sm border transition-all ${cfg.language === 'en' ? 'liquid-accent text-white shadow-md' : isDark ? 'bg-[#0a0a0a] border-[#333] text-zinc-300 hover:bg-zinc-800' : 'bg-zinc-50 border-zinc-300 text-zinc-700 hover:bg-zinc-200'}`}>
             English
           </button>
         </div>
@@ -34,13 +34,13 @@ export const SettingsTab: React.FC<{
       <div className="flex flex-col gap-3 col-span-1">
         <label className="text-sm font-semibold flex items-center gap-2">🎨 {t('setThemeLabel')}</label>
         <div className="flex flex-col gap-2 w-full">
-          <button onClick={() => cfg.setThemeSetting('dark')} className={`w-full py-2.5 px-4 rounded-xl font-semibold text-xs border text-left flex justify-between items-center transition-all ${cfg.themeSetting === 'dark' ? 'bg-red-500 border-red-600 text-white' : isDark ? 'bg-[#0a0a0a] border-[#333] text-zinc-300 hover:bg-zinc-800' : 'bg-zinc-50 border-zinc-300 text-zinc-700 hover:bg-zinc-100'}`}>
+          <button onClick={() => cfg.setThemeSetting('dark')} className={`w-full py-2.5 px-4 rounded-xl font-semibold text-xs border text-left flex justify-between items-center transition-all ${cfg.themeSetting === 'dark' ? 'liquid-accent text-white' : isDark ? 'bg-[#0a0a0a] border-[#333] text-zinc-300 hover:bg-zinc-800' : 'bg-zinc-50 border-zinc-300 text-zinc-700 hover:bg-zinc-100'}`}>
             <span>{t('themeDark')}</span>{cfg.themeSetting === 'dark' && <span className="text-white">✓</span>}
           </button>
-          <button onClick={() => cfg.setThemeSetting('light')} className={`w-full py-2.5 px-4 rounded-xl font-semibold text-xs border text-left flex justify-between items-center transition-all ${cfg.themeSetting === 'light' ? 'bg-red-500 border-red-600 text-white' : isDark ? 'bg-[#0a0a0a] border-[#333] text-zinc-300 hover:bg-zinc-800' : 'bg-zinc-50 border-zinc-300 text-zinc-700 hover:bg-zinc-100'}`}>
+          <button onClick={() => cfg.setThemeSetting('light')} className={`w-full py-2.5 px-4 rounded-xl font-semibold text-xs border text-left flex justify-between items-center transition-all ${cfg.themeSetting === 'light' ? 'liquid-accent text-white' : isDark ? 'bg-[#0a0a0a] border-[#333] text-zinc-300 hover:bg-zinc-800' : 'bg-zinc-50 border-zinc-300 text-zinc-700 hover:bg-zinc-100'}`}>
             <span>{t('themeLight')}</span>{cfg.themeSetting === 'light' && <span className="text-white">✓</span>}
           </button>
-          <button onClick={() => cfg.setThemeSetting('system')} className={`w-full py-2.5 px-4 rounded-xl font-semibold text-xs border text-left flex justify-between items-center transition-all ${cfg.themeSetting === 'system' ? 'bg-red-500 border-red-600 text-white' : isDark ? 'bg-[#0a0a0a] border-[#333] text-zinc-300 hover:bg-zinc-800' : 'bg-zinc-50 border-zinc-300 text-zinc-700 hover:bg-zinc-100'}`}>
+          <button onClick={() => cfg.setThemeSetting('system')} className={`w-full py-2.5 px-4 rounded-xl font-semibold text-xs border text-left flex justify-between items-center transition-all ${cfg.themeSetting === 'system' ? 'liquid-accent text-white' : isDark ? 'bg-[#0a0a0a] border-[#333] text-zinc-300 hover:bg-zinc-800' : 'bg-zinc-50 border-zinc-300 text-zinc-700 hover:bg-zinc-100'}`}>
             <span>{t('themeSystem')}</span>{cfg.themeSetting === 'system' && <span className="text-white">✓</span>}
           </button>
         </div>
@@ -63,7 +63,7 @@ export const SettingsTab: React.FC<{
                 onClick={() => cfg.setFontSize(size)}
                 className={`py-3 rounded-xl font-black text-xs border transition-all ${
                   isSelected 
-                    ? 'bg-gradient-to-r from-red-500 to-rose-600 border-red-600 text-white shadow-md shadow-red-500/10 scale-[1.02]' 
+                    ? 'liquid-accent text-white shadow-md scale-[1.02]'
                     : isDark ? 'bg-[#0a0a0a] border-[#333] text-zinc-300 hover:bg-zinc-800' : 'bg-zinc-50 border-zinc-300 text-zinc-700 hover:bg-zinc-200'
                 }`}
               >
@@ -150,7 +150,7 @@ export const SettingsTab: React.FC<{
           
           <button 
             onClick={onCheckUpdate}
-            className="bg-gradient-to-r from-red-500 to-rose-600 text-white font-black px-5 py-2.5 rounded-xl text-xs shadow-md cursor-pointer transition-all active:scale-[0.96] tracking-wider uppercase shrink-0"
+            className="liquid-accent text-white font-black px-5 py-2.5 rounded-xl text-xs shadow-md cursor-pointer transition-all active:scale-[0.96] tracking-wider uppercase shrink-0"
           >
             {t('setUpdateBtn') || 'KIỂM TRA NGAY'}
           </button>
