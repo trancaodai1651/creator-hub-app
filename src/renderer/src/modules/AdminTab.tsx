@@ -1,15 +1,16 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import { accountService } from '../utils/accountService'
+import { accountService, FULL_USER_ACCESS_CODE, isBuiltInAccessCode } from '../utils/accountService'
 import type { AccessCodeRecord, ActivityRecord, HubPermission, HubSession } from '../types/auth'
 
 const permissionLabels: Record<HubPermission, string> = {
   download: 'Tải video',
   joiner: 'Gộp video',
   short_export: 'Bản ngắn',
+  tts: 'Giọng đọc AI',
   view_activity: 'Xem hoạt động',
   manage_access_codes: 'Quản lý mã'
 }
-const userPermissions: HubPermission[] = ['download', 'joiner', 'short_export']
+const userPermissions: HubPermission[] = ['download', 'joiner', 'short_export', 'tts']
 
 interface AdminTabProps {
   session: HubSession
@@ -125,6 +126,8 @@ export const AdminTab: React.FC<AdminTabProps> = ({ session, isDark }) => {
   }
 
   const editorIsActive = Boolean(editingId)
+  const editorCode = (editorIsActive ? editCode : code).trim().toUpperCase()
+  const canGrantTts = editorCode === FULL_USER_ACCESS_CODE
 
   return (
     <div className="flex h-full min-h-0 flex-col gap-4 overflow-hidden p-4 sm:p-6">
@@ -182,7 +185,7 @@ export const AdminTab: React.FC<AdminTabProps> = ({ session, isDark }) => {
                 </label>
               )}
 
-              <div className="mt-5"><p className="text-xs font-medium">Quyền sử dụng</p><div className="mt-2 grid gap-2">{userPermissions.map(permission => <label key={permission} className="flex min-w-0 items-center gap-2 text-xs opacity-75"><input type="checkbox" checked={(editorIsActive ? editPermissions : permissions).includes(permission)} onChange={() => togglePermission(permission, editorIsActive)} />{permissionLabels[permission]}</label>)}</div></div>
+              <div className="mt-5"><p className="text-xs font-medium">Quyền sử dụng</p><div className="mt-2 grid gap-2">{userPermissions.map(permission => <label key={permission} className={`flex min-w-0 items-center gap-2 text-xs ${permission === 'tts' && !canGrantTts ? 'cursor-not-allowed opacity-35' : 'opacity-75'}`}><input type="checkbox" checked={(editorIsActive ? editPermissions : permissions).includes(permission)} disabled={permission === 'tts' && !canGrantTts} onChange={() => togglePermission(permission, editorIsActive)} />{permissionLabels[permission]}</label>)}</div><p className="mt-2 text-[10px] opacity-50">Giọng đọc AI chỉ dùng được với mã 160501.</p></div>
               <button type="submit" disabled={busy} className="mt-6 w-full whitespace-nowrap rounded-2xl bg-red-500 px-4 py-3 text-xs font-semibold text-white transition hover:bg-red-600 disabled:cursor-wait disabled:opacity-50">{busy ? 'Đang lưu...' : editorIsActive ? 'LƯU THAY ĐỔI' : 'TẠO MÃ MỚI'}</button>
             </form>
 
@@ -191,7 +194,7 @@ export const AdminTab: React.FC<AdminTabProps> = ({ session, isDark }) => {
                 <div key={record.id} className={`min-w-0 rounded-3xl border p-4 ${record.revokedAt ? 'opacity-45' : ''} ${editingId === record.id ? 'border-blue-500/50 ring-1 ring-blue-500/20' : ''} ${isDark ? 'border-white/10 bg-white/5' : 'border-zinc-200 bg-white/70'}`}>
                   <div className="flex min-w-0 items-start justify-between gap-3">
                     <div className="min-w-0 flex-1"><p className="break-all font-mono text-lg font-semibold tracking-widest text-blue-500">{record.code}</p><p className="mt-1 truncate text-xs opacity-55">{record.label} · {record.useCount} lượt dùng</p></div>
-                    {!record.revokedAt && <div className="flex shrink-0 flex-wrap justify-end gap-2">{record.code === '1651' ? <span className="rounded-full bg-emerald-500/10 px-3 py-1.5 text-[11px] font-medium text-emerald-600">Mặc định · đầy đủ quyền</span> : <><button type="button" title="Chỉnh sửa mã" onClick={() => startEdit(record)} className="rounded-full border border-blue-500/20 px-3 py-1.5 text-[11px] font-medium text-blue-500 hover:bg-blue-500/10">Sửa</button><button type="button" disabled={busy} onClick={() => void revoke(record)} className="rounded-full border border-red-500/20 px-3 py-1.5 text-[11px] font-medium text-red-500 hover:bg-red-500/10">Thu hồi</button></>}</div>}
+                    {!record.revokedAt && <div className="flex shrink-0 flex-wrap justify-end gap-2">{isBuiltInAccessCode(record) ? <span className="rounded-full bg-emerald-500/10 px-3 py-1.5 text-[11px] font-medium text-emerald-600">Tích hợp · {record.code === FULL_USER_ACCESS_CODE ? 'đầy đủ quyền' : 'không có Giọng đọc AI'}</span> : <><button type="button" title="Chỉnh sửa mã" onClick={() => startEdit(record)} className="rounded-full border border-blue-500/20 px-3 py-1.5 text-[11px] font-medium text-blue-500 hover:bg-blue-500/10">Sửa</button><button type="button" disabled={busy} onClick={() => void revoke(record)} className="rounded-full border border-red-500/20 px-3 py-1.5 text-[11px] font-medium text-red-500 hover:bg-red-500/10">Thu hồi</button></>}</div>}
                   </div>
                   <div className="mt-3 flex min-w-0 flex-wrap gap-1.5">{record.permissions.map(permission => <span key={permission} className="rounded-full bg-blue-500/10 px-2 py-1 text-[10px] text-blue-500">{permissionLabels[permission]}</span>)}</div>
                   <p className="mt-3 break-words text-[10px] opacity-40">Tạo: {new Date(record.createdAt).toLocaleString()} {record.expiresAt ? `· Hết hạn: ${new Date(record.expiresAt).toLocaleString()}` : '· Không hết hạn'}</p>

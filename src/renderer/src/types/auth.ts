@@ -4,6 +4,7 @@ export type HubPermission =
   | 'download'
   | 'joiner'
   | 'short_export'
+  | 'tts'
   | 'view_activity'
   | 'manage_access_codes'
 
@@ -11,6 +12,7 @@ export const HUB_PERMISSIONS: HubPermission[] = [
   'download',
   'joiner',
   'short_export',
+  'tts',
   'view_activity',
   'manage_access_codes'
 ]

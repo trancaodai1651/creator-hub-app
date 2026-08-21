@@ -7,11 +7,15 @@ import { fileURLToPath } from 'node:url'
 const root = path.dirname(fileURLToPath(import.meta.url))
 const dataFile = process.env.HUB_DATA_FILE || path.join(root, 'data.json')
 const port = Number(process.env.PORT || 8787)
-const userPermissions = new Set(['download', 'joiner', 'short_export'])
+const userPermissions = new Set(['download', 'joiner', 'short_export', 'tts'])
 const defaultAccessCodeId = 'default-access-code'
+const secondaryAccessCodeId = 'secondary-access-code'
+const fullUserAccessCodeId = 'full-user-access-code'
 const defaultAdminUsername = process.env.HUB_ADMIN_USERNAME || 'trancaodai'
 const defaultAdminPassword = process.env.HUB_ADMIN_PASSWORD || 'Dai1651'
 const defaultAccessCode = '1651'
+const secondaryAccessCode = '1231'
+const fullUserAccessCode = '160501'
 const sessions = new Map()
 
 const readData = () => {
@@ -30,10 +34,22 @@ const passwordHash = (password, salt = crypto.randomBytes(16).toString('hex')) =
 const validPassword = (password, stored) => { const [, salt, expected] = String(stored || '').split('$'); if (!salt || !expected) return false; const actual = crypto.scryptSync(password, salt, 64).toString('hex'); return crypto.timingSafeEqual(Buffer.from(actual), Buffer.from(expected)) }
 const createSession = (payload) => { const value = token(); sessions.set(value, { ...payload, expiresAt: Date.now() + 1000 * 60 * 60 * 24 * 14 }); return value }
 const auth = (req, requiredRole) => { const value = String(req.headers.authorization || '').replace(/^Bearer\s+/i, ''); const session = sessions.get(value); if (!session || session.expiresAt < Date.now() || (requiredRole && session.role !== requiredRole)) return null; return { ...session, token: value } }
-const cleanPermissions = input => Array.isArray(input) ? input.filter(value => userPermissions.has(value)) : []
-const createAccessCode = (body) => ({ id: id(), code: String(body.code || `CH-${crypto.randomBytes(4).toString('hex').toUpperCase()}`).trim().toUpperCase().slice(0, 40), label: String(body.label || 'Người dùng bên ngoài').trim().slice(0, 80), permissions: cleanPermissions(body.permissions), createdAt: new Date().toISOString(), expiresAt: body.expiresAt || undefined, useCount: 0 })
-const isDefaultAccessCode = record => record?.id === defaultAccessCodeId || record?.code === defaultAccessCode
-const defaultUserPermissions = () => Array.from(userPermissions)
+const standardUserPermissions = () => Array.from(userPermissions).filter(value => value !== 'tts')
+const fullUserPermissions = () => Array.from(userPermissions)
+const cleanPermissions = (input, code = '') => {
+  const values = Array.isArray(input) ? input.filter(value => userPermissions.has(value) && (value !== 'tts' || code === fullUserAccessCode)) : []
+  return code === fullUserAccessCode ? fullUserPermissions() : Array.from(new Set(values))
+}
+const createAccessCode = (body) => {
+  const code = String(body.code || `CH-${crypto.randomBytes(4).toString('hex').toUpperCase()}`).trim().toUpperCase().slice(0, 40)
+  return { id: id(), code, label: String(body.label || 'Người dùng bên ngoài').trim().slice(0, 80), permissions: cleanPermissions(body.permissions, code), createdAt: new Date().toISOString(), expiresAt: body.expiresAt || undefined, useCount: 0 }
+}
+const builtInAccessCodes = [
+  { id: defaultAccessCodeId, code: defaultAccessCode, label: 'Người dùng mặc định', permissions: standardUserPermissions() },
+  { id: secondaryAccessCodeId, code: secondaryAccessCode, label: 'Người dùng tiêu chuẩn', permissions: standardUserPermissions() },
+  { id: fullUserAccessCodeId, code: fullUserAccessCode, label: 'Người dùng đầy đủ tính năng', permissions: fullUserPermissions() }
+]
+const isBuiltInAccessCode = record => builtInAccessCodes.some(item => item.id === record?.id || item.code === record?.code)
 
 const ensureDefaults = () => {
   let changed = false
@@ -41,18 +57,32 @@ const ensureDefaults = () => {
     data.admin = { username: defaultAdminUsername, passwordHash: passwordHash(defaultAdminPassword), displayName: defaultAdminUsername }
     changed = true
   }
-  const defaultRecord = data.accessCodes.find(item => isDefaultAccessCode(item))
-  if (!defaultRecord) {
-    data.accessCodes.unshift({ id: defaultAccessCodeId, code: defaultAccessCode, label: 'Người dùng mặc định', permissions: defaultUserPermissions(), createdAt: '2026-08-21T00:00:00.000Z', useCount: 0 })
-    changed = true
-  } else {
-    const permissions = defaultUserPermissions()
-    if (defaultRecord.id !== defaultAccessCodeId || defaultRecord.code !== defaultAccessCode || JSON.stringify(defaultRecord.permissions || []) !== JSON.stringify(permissions) || defaultRecord.revokedAt || defaultRecord.expiresAt) {
-      defaultRecord.id = defaultAccessCodeId
-      defaultRecord.code = defaultAccessCode
-      defaultRecord.permissions = permissions
-      delete defaultRecord.revokedAt
-      delete defaultRecord.expiresAt
+  for (const definition of builtInAccessCodes) {
+    const matches = data.accessCodes.filter(item => item.id === definition.id || item.code === definition.code)
+    const record = matches[0]
+    if (!record) {
+      data.accessCodes.unshift({ ...definition, createdAt: '2026-08-21T00:00:00.000Z', useCount: 0 })
+      changed = true
+      continue
+    }
+    if (record.id !== definition.id || record.code !== definition.code || record.label !== definition.label || JSON.stringify(record.permissions || []) !== JSON.stringify(definition.permissions) || record.revokedAt || record.expiresAt) {
+      record.id = definition.id
+      record.code = definition.code
+      record.label = definition.label
+      record.permissions = [...definition.permissions]
+      delete record.revokedAt
+      delete record.expiresAt
+      changed = true
+    }
+    if (matches.length > 1) {
+      data.accessCodes = data.accessCodes.filter(item => item === record || !matches.includes(item))
+      changed = true
+    }
+  }
+  for (const record of data.accessCodes) {
+    const permissions = cleanPermissions(record.permissions, record.code)
+    if (JSON.stringify(record.permissions || []) !== JSON.stringify(permissions)) {
+      record.permissions = permissions
       changed = true
     }
   }
@@ -105,7 +135,7 @@ const server = http.createServer(async (req, res) => {
       if (!auth(req, 'admin')) return json(res, 401, { message: 'Admin authentication required.' })
       const record = data.accessCodes.find(item => item.id === decodeURIComponent(url.pathname.split('/').pop()))
       if (!record) return json(res, 404, { message: 'Access code not found.' })
-      if (isDefaultAccessCode(record)) return json(res, 409, { message: 'Mã truy cập mặc định 1651 luôn có đầy đủ quyền người dùng và không thể sửa.' })
+      if (isBuiltInAccessCode(record)) return json(res, 409, { message: 'Mã truy cập tích hợp không thể sửa.' })
       if (record.revokedAt) return json(res, 409, { message: 'Không thể sửa access code đã thu hồi.' })
       const body = await readBody(req)
       const code = String(body.code || '').trim().toUpperCase().slice(0, 40)
@@ -113,7 +143,7 @@ const server = http.createServer(async (req, res) => {
       if (data.accessCodes.some(item => item.id !== record.id && item.code === code && !item.revokedAt)) return json(res, 409, { message: 'Access code này đã tồn tại.' })
       record.code = code
       record.label = String(body.label || 'Người dùng bên ngoài').trim().slice(0, 80)
-      record.permissions = cleanPermissions(body.permissions)
+      record.permissions = cleanPermissions(body.permissions, code)
       record.expiresAt = body.expiresAt || undefined
       persist()
       return json(res, 200, { accessCode: record })
@@ -122,7 +152,7 @@ const server = http.createServer(async (req, res) => {
       if (!auth(req, 'admin')) return json(res, 401, { message: 'Admin authentication required.' })
       const record = data.accessCodes.find(item => item.id === decodeURIComponent(url.pathname.split('/').pop()))
       if (!record) return json(res, 404, { message: 'Access code not found.' })
-      if (isDefaultAccessCode(record)) return json(res, 409, { message: 'Mã truy cập mặc định 1651 không thể bị thu hồi.' })
+      if (isBuiltInAccessCode(record)) return json(res, 409, { message: 'Mã truy cập tích hợp không thể bị thu hồi.' })
       record.revokedAt = new Date().toISOString(); persist(); return json(res, 200, { ok: true })
     }
     if (req.method === 'GET' && url.pathname === '/api/admin/activity') {

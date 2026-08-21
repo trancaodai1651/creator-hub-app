@@ -90,6 +90,10 @@ export default function App() {
   }, [activeTab, session?.token])
 
   useEffect(() => {
+    if (activeTab === 'tts' && !hasPermission(session, 'tts')) setActiveTab('home')
+  }, [activeTab, session])
+
+  useEffect(() => {
     localStorage.setItem('hub_lang', language)
     localStorage.setItem('hub_groq_key', groqKey)
     localStorage.setItem('yt_client_id', youtubeClientId)
@@ -159,7 +163,7 @@ export default function App() {
   const handleTabChange = (tabId: string) => {
     const tab = [...SIDEBAR_TABS, { id: 'admin', nameKey: 'adminConsole', descKey: 'adminConsoleDesc', icon: '🛡️', isWip: false }].find(item => item.id === tabId)
     if (tab?.isWip) return
-    const requiredPermission: Partial<Record<string, HubPermission>> = { downloader: 'download', joiner: 'joiner', highlight: 'joiner' }
+    const requiredPermission: Partial<Record<string, HubPermission>> = { downloader: 'download', joiner: 'joiner', highlight: 'joiner', tts: 'tts' }
     if (tabId === 'admin' && session?.role !== 'admin') return
     if (requiredPermission[tabId] && !hasPermission(session, requiredPermission[tabId]!)) {
       setCustomModal({ show: true, title: t('accessDeniedTitle'), message: t('accessDeniedMessage') })
@@ -203,7 +207,7 @@ export default function App() {
   const colors = isDark ? DARK_THEME : LIGHT_THEME
   const visibleTabs = SIDEBAR_TABS.filter(tab => tab.id !== 'home')
   const navigationTabs = session?.role === 'admin' ? [...visibleTabs, { id: 'admin', nameKey: 'adminConsole', descKey: 'adminConsoleDesc', icon: '🛡️', isWip: false }] : visibleTabs
-  const requiredPermission: Partial<Record<string, HubPermission>> = { downloader: 'download', joiner: 'joiner', highlight: 'joiner' }
+  const requiredPermission: Partial<Record<string, HubPermission>> = { downloader: 'download', joiner: 'joiner', highlight: 'joiner', tts: 'tts' }
   const canAccessTab = (tabId: string) => !requiredPermission[tabId] || hasPermission(session, requiredPermission[tabId]!)
 
   const renderTab = () => {
