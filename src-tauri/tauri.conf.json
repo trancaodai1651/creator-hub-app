@@ -42,7 +42,8 @@
     "resources": [
       "resources/ffmpeg.exe",
       "resources/ffprobe.exe",
-      "resources/deno.exe"
+      "resources/deno.exe",
+      "scripts/omnivoice_adapter.py"
     ],
     "android": {
       "debugApplicationIdSuffix": ".debug"

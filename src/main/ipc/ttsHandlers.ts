@@ -2,26 +2,59 @@
 import { ipcMain, app } from 'electron'
 import * as fs from 'fs'
 import * as path from 'path'
+import { spawnSync } from 'child_process'
+
+const modelId = 'k2-fsa/OmniVoice'
+
+const getScriptPath = () => {
+  const packaged = path.join(process.resourcesPath, 'scripts', 'omnivoice_adapter.py')
+  if (fs.existsSync(packaged)) return packaged
+  return path.join(app.getAppPath(), 'src-tauri', 'scripts', 'omnivoice_adapter.py')
+}
+
+const runAdapter = (action: string, args: string[] = []) => {
+  const script = getScriptPath()
+  const command = process.platform === 'win32' ? 'py' : 'python3'
+  const commandArgs = process.platform === 'win32' ? ['-3', script, ...args, action] : [script, ...args, action]
+  const result = spawnSync(command, commandArgs, { encoding: 'utf8', windowsHide: true, maxBuffer: 1024 * 1024 * 8 })
+  const stdout = String(result.stdout || '').trim()
+  const stderr = String(result.stderr || '').trim()
+  let payload: any = {}
+  try { payload = stdout ? JSON.parse(stdout) : {} } catch { payload = { message: stdout } }
+  if (result.error) throw result.error
+  if (result.status !== 0 || payload.success === false) throw new Error(payload.message || stderr || 'OmniVoice không thể xử lý yêu cầu.')
+  return payload
+}
 
 export function registerTtsHandlers() {
-  ipcMain.handle('get-elevenlabs-voices', async (_event, { apiKey }: any) => {
-    if (!apiKey) return []
-    try { const response = await (globalThis as any).fetch('https://api.elevenlabs.io/v1/voices', { method: 'GET', headers: { 'xi-api-key': apiKey } }); if (!response.ok) return []; const data: any = await response.json(); return data.voices || [] } 
-    catch (err) { return [] }
+  ipcMain.handle('omnivoice-status', () => runAdapter('status'))
+
+  ipcMain.handle('install-omnivoice-runtime', () => {
+    const command = process.platform === 'win32' ? 'py' : 'python3'
+    const args = process.platform === 'win32' ? ['-3', '-m', 'pip', 'install', '--upgrade', 'git+https://github.com/k2-fsa/OmniVoice.git'] : ['-m', 'pip', 'install', '--upgrade', 'git+https://github.com/k2-fsa/OmniVoice.git']
+    const result = spawnSync(command, args, { encoding: 'utf8', windowsHide: true, maxBuffer: 1024 * 1024 * 8 })
+    if (result.status !== 0) throw new Error(String(result.stderr || 'Cài lõi OmniVoice thất bại.').trim())
+    return { success: true, message: 'Đã cài lõi OmniVoice. Có thể cần tải model ở lần tạo giọng đầu tiên.' }
   })
 
-  ipcMain.handle('generate-tts-elevenlabs', async (event, { text, voiceId, apiKey, outputDir }: any) => {
-    if (!text || !voiceId || !apiKey) return { success: false, message: "Thiếu tham số cấu hình hệ thống!" }
-    const finalOutputDir = outputDir && fs.existsSync(outputDir) ? outputDir : app.getPath('downloads')
-    const outputPath = path.join(finalOutputDir, `Voice_Adam_AI_${Date.now()}.mp3`)
-    try {
-      event.sender.send('convert-progress', { message: "Đang kết nối cổng dịch thuật ElevenLabs...", percent: 20 })
-      const response = await (globalThis as any).fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, { method: 'POST', headers: { 'xi-api-key': apiKey, 'Content-Type': 'application/json' }, body: JSON.stringify({ text: text, model_id: 'eleven_multilingual_v2', voice_settings: { stability: 0.5, similarity_boost: 0.75 } }) })
-      if (!response.ok) return { success: false, message: `Lỗi kết nối API: ${await response.text()}` }
-      event.sender.send('convert-progress', { message: "Đang tải luồng âm thanh nhị phân...", percent: 60 })
-      const buffer = Buffer.from(await response.arrayBuffer())
-      fs.writeFileSync(outputPath, buffer); event.sender.send('convert-progress', { message: "Hoàn thành!", percent: 100 })
-      return { success: true, message: `Đã tạo thành công giọng đọc AI tại thư mục: ${outputPath}` }
-    } catch (error: any) { return { success: false, message: error.message } }
+  ipcMain.handle('clone-omnivoice-voice', (_event, input: any) => {
+    const root = input.projectDir || path.join(app.getPath('userData'), 'creator-hub', 'project-default')
+    const promptPath = path.join(root, 'voices', `${String(input.name || 'voice').replace(/[^a-z0-9_-]/gi, '_')}_${Date.now()}.pt`)
+    fs.mkdirSync(path.dirname(promptPath), { recursive: true })
+    const result = runAdapter('clone', ['--ref-audio', input.referenceAudio, '--ref-text', input.referenceText, '--prompt-path', promptPath, '--device', input.device || 'auto', '--model', input.modelId || modelId])
+    return { ...result, voiceId: path.basename(promptPath, '.pt'), promptPath, projectDir: root }
+  })
+
+  ipcMain.handle('generate-omnivoice-voice', (_event, input: any) => {
+    const root = input.projectDir || path.join(app.getPath('userData'), 'creator-hub', 'project-default')
+    const outputDir = input.outputDir || path.join(root, 'audio')
+    fs.mkdirSync(outputDir, { recursive: true })
+    const outputPath = path.join(outputDir, `${String(input.voiceId || 'omnivoice').replace(/[^a-z0-9_-]/gi, '_')}_${Date.now()}.wav`)
+    const args = ['--text', input.text, '--language', input.language || 'auto', '--output', outputPath, '--device', input.device || 'auto', '--model', input.modelId || modelId]
+    if (input.promptPath) args.push('--prompt-path', input.promptPath)
+    if (input.referenceAudio) args.push('--ref-audio', input.referenceAudio)
+    if (input.referenceText) args.push('--ref-text', input.referenceText)
+    if (input.voiceInstruction) args.push('--instruct', input.voiceInstruction)
+    return { ...runAdapter('generate', args), outputPath, projectDir: root }
   })
 }

@@ -57,7 +57,6 @@ export default function App() {
   const [youtubeClientId, setYoutubeClientId] = useState(localStorage.getItem('yt_client_id') || '')
   const [youtubeClientSecret, setYoutubeClientSecret] = useState(localStorage.getItem('yt_client_secret') || '')
   const [groqKey, setGroqKey] = useState(() => localStorage.getItem('hub_groq_key') || '')
-  const [elevenKey, setElevenKey] = useState(() => localStorage.getItem('hub_eleven_key') || '')
   const [isFirstRun, setIsFirstRun] = useState(() => localStorage.getItem('hub_first_run') !== 'false')
   const [customModal, setCustomModal] = useState<any>(null)
   const [updateProgress, setUpdateProgress] = useState<{ show: boolean; msg: string; percent: number } | null>(null)
@@ -73,7 +72,7 @@ export default function App() {
   const joiner = useJoiner(t, setCustomModal, session)
   const dl = useDownloader(t, setCustomModal, session)
   const conv = useConverter(t, setCustomModal, groqKey)
-  const tts = useTts(t, setCustomModal, elevenKey, activeTab)
+  const tts = useTts(t, setCustomModal, activeTab)
   const ren = useRenamer(t, setCustomModal)
   const ins = useInstaller(t, setCustomModal)
   const un = useUninstaller(t, setCustomModal, activeTab)
@@ -93,10 +92,9 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('hub_lang', language)
     localStorage.setItem('hub_groq_key', groqKey)
-    localStorage.setItem('hub_eleven_key', elevenKey)
     localStorage.setItem('yt_client_id', youtubeClientId)
     localStorage.setItem('yt_client_secret', youtubeClientSecret)
-  }, [language, groqKey, elevenKey, youtubeClientId, youtubeClientSecret])
+  }, [language, groqKey, youtubeClientId, youtubeClientSecret])
 
   useEffect(() => {
     localStorage.setItem('hub_font_size', fontSize)
@@ -222,7 +220,7 @@ export default function App() {
     if (activeTab === 'publisher') return <PublisherTab publisher={pub} t={t} colors={colors} isDark={isDark} />
     if (activeTab === 'admin' && session?.role === 'admin') return <AdminTab session={session} isDark={isDark} />
     if (activeTab === 'guide') return <GuideTab t={t} colors={colors} isDark={isDark} />
-    if (activeTab === 'settings') return <SettingsTab cfg={{ language, setLanguage, themeSetting, setThemeSetting, fontSize, setFontSize, groqKey, setGroqKey, elevenKey, setElevenKey, youtubeClientId, setYoutubeClientId, youtubeClientSecret, setYoutubeClientSecret }} t={t} colors={colors} isDark={isDark} onCheckUpdate={() => handleCheckUpdate(true)} />
+    if (activeTab === 'settings') return <SettingsTab cfg={{ language, setLanguage, themeSetting, setThemeSetting, fontSize, setFontSize, groqKey, setGroqKey, youtubeClientId, setYoutubeClientId, youtubeClientSecret, setYoutubeClientSecret }} t={t} colors={colors} isDark={isDark} onCheckUpdate={() => handleCheckUpdate(true)} />
     return null
   }
 

@@ -27,8 +27,9 @@ Creator Hub is divided into powerful modules, combining local Rust native hardwa
 - **Video Downloader:** Fetch high-quality videos (up to 4K) from YouTube, TikTok, and 1000+ platforms using embedded anti-bot bypass mechanisms.
 - **Smart Converter:** Cross-convert between `mp4`, `mkv`, `mov`, `mp3`, `webp` with native hardware acceleration (`nvenc`, `qsv`, `videotoolbox`).
 
-### 🧠 AI Integration (Coming Soon / WIP)
-- **AI Voice Generator:** Studio-grade multilingual voiceovers powered by ElevenLabs.
+### 🧠 AI Voice & Affiliate Scripts
+- **OmniVoice local voice studio:** Uses the [OmniVoice](https://github.com/k2-fsa/OmniVoice) Python engine with automatic script-language selection, reusable project voice prompts, voice cloning, and voice design.
+- **Affiliate script workflow:** Creates editable TikTok, Shopee, and Facebook product scripts. Users must approve or explicitly use pasted text before audio generation.
 - **AI Subtitle Extractor:** Auto-extract and transcribe audio using Groq Cloud API & Whisper-Large-V3.
 
 ### 🛠️ System Administration

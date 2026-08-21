@@ -78,6 +78,12 @@
       "!node_modules/@tailwindcss/oxide-darwin-x64{,/**/*}",
       "!node_modules/@tailwindcss/oxide-darwin-arm64{,/**/*}"
     ],
+    "extraResources": [
+      {
+        "from": "src-tauri/scripts/omnivoice_adapter.py",
+        "to": "scripts/omnivoice_adapter.py"
+      }
+    ],
     "directories": {
       "output": "dist"
     },

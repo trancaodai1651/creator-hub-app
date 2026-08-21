@@ -76,9 +76,9 @@ Sự kết hợp giữa các API đám mây hàng đầu giúp nâng cấp Creat
 * **Groq Cloud API (Model: \`llama-3.1-8b-instant\`):**
     * **Vai trò:** Đóng vai trò "bộ não" cho phân hệ Trợ lý AI (Chatbot).
     * **Đặc tính:** Sử dụng chuẩn tương thích OpenAI kết hợp công nghệ xử lý phần cứng siêu tốc của Groq giúp mô hình Llama 3.1 phản hồi câu hỏi, lên ý tưởng và viết kịch bản video với tốc độ gần như tức thì (Instantaneous Reply).
-* **ElevenLabs API (Multilingual V2 Model):**
-    * **Vai trò:** Cung cấp giải pháp chuyển đổi văn bản thành giọng nói (Text-to-Speech) chất lượng cao phòng thu.
-    * **Đặc tính:** Sử dụng mô hình AI chuyển đổi ngữ điệu tự nhiên, mô phỏng chính xác giọng đọc truyền cảm (Adam ElevenLabs), phục vụ cho việc lồng tiếng video tự động.
+* **OmniVoice local engine:**
+    * **Vai trò:** Cung cấp giải pháp chuyển đổi kịch bản sản phẩm thành giọng đọc cục bộ, không phụ thuộc khóa dịch vụ bên ngoài.
+    * **Đặc tính:** Hỗ trợ giọng tự động, lưu prompt clone theo dự án, thiết kế giọng và tự chọn ngôn ngữ theo kịch bản.
 * **GitHub REST API:**
     * **Vai trò:** Hệ thống phân phối và định tuyến phiên bản ứng dụng trên Cloud.
     * **Cơ chế:** Giao diện gọi lệnh kiểm tra đến endpoint `/releases/latest` của GitHub để bóc tách thông tin thẻ phiên bản (`tag_name`), so sánh phiên bản hệ thống hiện tại để tự động kéo các tệp assets tương ứng (`.exe` hoặc `.zip`) về máy người dùng.
@@ -88,7 +88,7 @@ Sự kết hợp giữa các API đám mây hàng đầu giúp nâng cấp Creat
 ## 💾 6. Quản Lý Dữ Liệu & Bộ Nhớ Đệm (Data & Caching)
 
 * **Web Storage API (\`localStorage\`):**
-    * **Lưu trữ cấu hình:** Quản lý trạng thái mở app lần đầu (`hub_first_run`), lựa chọn ngôn ngữ hiển thị (`hub_lang`), cài đặt chủ đề (`hub_theme`) và các chuỗi khóa bảo mật cá nhân (`hub_groq_key`, `hub_eleven_key`).
+    * **Lưu trữ cấu hình:** Quản lý trạng thái mở app lần đầu (`hub_first_run`), lựa chọn ngôn ngữ hiển thị (`hub_lang`), cài đặt chủ đề (`hub_theme`), khóa Groq và thư viện giọng OmniVoice theo dự án.
     * **Hệ thống đa luồng hội thoại (Multi-session Cache):** Toàn bộ lịch sử các cuộc trò chuyện của người dùng với AI được cấu trúc hóa dưới dạng mảng đối tượng `ChatSession`, liên tục đồng bộ ngầm dưới dạng chuỗi JSON hóa vào cache thiết bị. Nhờ đó, dữ liệu chat cũ được bảo toàn vẹn nguyên ngay cả khi người dùng tắt ứng dụng hoặc khởi động lại máy tính.
 * **Kiến Trúc Quốc Tế Hóa (Custom i18n Architecture):**
     * **Cấu trúc:** Tách biệt hệ thống từ điển ngôn ngữ thành các module file độc lập (`locales/vi.ts`, `locales/en.ts`).

@@ -14,7 +14,7 @@ export const SIDEBAR_TABS: TabItem[] = [
   { id: 'downloader', nameKey: 'videoDownloader', descKey: 'descDownloader', icon: '\u{1F4E5}', isWip: false },
   { id: 'publisher', nameKey: 'pubTitle', descKey: 'pubSub', icon: '\u{1F680}', isWip: true },
   { id: 'converter', nameKey: 'fileConverter', descKey: 'descConverter', icon: '\u{26A1}', isWip: true },
-  { id: 'tts', nameKey: 'appTts', descKey: 'descTts', icon: '\u{1F5E3}\u{FE0F}', isWip: true },
+  { id: 'tts', nameKey: 'appTts', descKey: 'descTts', icon: '\u{1F5E3}\u{FE0F}', isWip: false },
   { id: 'renamer', nameKey: 'fileRenamer', descKey: 'descRenamer', icon: '\u{1F5C2}\u{FE0F}', isWip: true },
   { id: 'installer', nameKey: 'appInstaller', descKey: 'descInstaller', icon: '\u{1F6E0}\u{FE0F}', isWip: true },
   { id: 'uninstaller', nameKey: 'uninstaller', descKey: 'descUninstaller', icon: '\u{274C}', isWip: true },

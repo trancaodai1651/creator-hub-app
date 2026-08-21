@@ -59,8 +59,10 @@ fn main() {
             commands::system::get_gpu_name,
             commands::system::get_cpu_name,
             
-            commands::tts::get_elevenlabs_voices,
-            commands::tts::generate_tts_elevenlabs,
+            commands::tts::omnivoice_status,
+            commands::tts::install_omnivoice_runtime,
+            commands::tts::clone_omnivoice_voice,
+            commands::tts::generate_omnivoice_voice,
             commands::downloader::search_video,
             commands::downloader::get_video_info,
             commands::downloader::download_video,
