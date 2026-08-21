@@ -5,6 +5,7 @@ import { DARK_THEME, LIGHT_THEME } from './constants/theme'
 import { SIDEBAR_TABS } from './constants/navigation'
 import { SplashScreen } from './modules/SplashScreen'
 import { JoinerTab } from './modules/JoinerTab'
+import { HighlightTab } from './modules/HighlightTab'
 import { DownloaderTab } from './modules/DownloaderTab'
 import { ConverterTab } from './modules/ConverterTab'
 import { TtsTab } from './modules/TtsTab'
@@ -160,7 +161,7 @@ export default function App() {
   const handleTabChange = (tabId: string) => {
     const tab = [...SIDEBAR_TABS, { id: 'admin', nameKey: 'adminConsole', descKey: 'adminConsoleDesc', icon: '🛡️', isWip: false }].find(item => item.id === tabId)
     if (tab?.isWip) return
-    const requiredPermission: Partial<Record<string, HubPermission>> = { downloader: 'download', joiner: 'joiner' }
+    const requiredPermission: Partial<Record<string, HubPermission>> = { downloader: 'download', joiner: 'joiner', highlight: 'joiner' }
     if (tabId === 'admin' && session?.role !== 'admin') return
     if (requiredPermission[tabId] && !hasPermission(session, requiredPermission[tabId]!)) {
       setCustomModal({ show: true, title: 'ACCESS DENIED', message: 'Access code hiện tại chưa được cấp quyền cho chức năng này.' })
@@ -204,11 +205,12 @@ export default function App() {
   const colors = isDark ? DARK_THEME : LIGHT_THEME
   const visibleTabs = SIDEBAR_TABS.filter(tab => tab.id !== 'home')
   const navigationTabs = session?.role === 'admin' ? [...visibleTabs, { id: 'admin', nameKey: 'adminConsole', descKey: 'adminConsoleDesc', icon: '🛡️', isWip: false }] : visibleTabs
-  const requiredPermission: Partial<Record<string, HubPermission>> = { downloader: 'download', joiner: 'joiner' }
+  const requiredPermission: Partial<Record<string, HubPermission>> = { downloader: 'download', joiner: 'joiner', highlight: 'joiner' }
   const canAccessTab = (tabId: string) => !requiredPermission[tabId] || hasPermission(session, requiredPermission[tabId]!)
 
   const renderTab = () => {
-    if (activeTab === 'joiner') return <JoinerTab joiner={joiner} t={t} isDark={isDark} colors={colors} canUseShortVersion={hasPermission(session, 'short_export')} />
+    if (activeTab === 'joiner') return <JoinerTab joiner={joiner} isDark={isDark} canUseShortVersion={hasPermission(session, 'short_export')} />
+    if (activeTab === 'highlight') return <HighlightTab joiner={joiner} isDark={isDark} />
     if (activeTab === 'downloader') return <DownloaderTab dl={dl} t={t} colors={colors} />
     if (activeTab === 'converter') return <ConverterTab conv={conv} t={t} colors={colors} isDark={isDark} />
     if (activeTab === 'tts') return <TtsTab tts={tts} t={t} colors={colors} />

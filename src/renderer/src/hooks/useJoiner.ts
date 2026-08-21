@@ -42,7 +42,6 @@ export function useJoiner(t: (key: string) => string, setCustomModal: (modal: an
   const [shortDuration, setShortDuration] = useState<number>(1)
   const [shortRatio, setShortRatio] = useState<string>('9:16')
 
-  const [highlightOpen, setHighlightOpen] = useState(false)
   const [highlightSegments, setHighlightSegments] = useState<HighlightSegment[]>([])
   const [highlightOutputMode, setHighlightOutputMode] = useState('multiple-long')
   const [highlightRatio, setHighlightRatio] = useState('original')
@@ -139,7 +138,11 @@ export function useJoiner(t: (key: string) => string, setCustomModal: (modal: an
     const files: any[] = await tauriApi.invoke('open_multi_files_dialog')
     const paths = (files || []).map(file => typeof file === 'string' ? file : file?.path).filter(Boolean)
     if (paths.length === 0) return
-    setHighlightSegments(current => current.length > 0 ? current : paths.map((videoPath: string) => ({ id: crypto.randomUUID(), videoPath, startSecs: 0, endSecs: 60 })))
+    setHighlightSegments(current => {
+      const existing = new Set(current.map(segment => segment.videoPath))
+      const additions = paths.filter((videoPath: string) => !existing.has(videoPath)).map((videoPath: string) => ({ id: crypto.randomUUID(), videoPath, startSecs: 0, endSecs: 60 }))
+      return current.length > 0 ? [...current, ...additions] : additions
+    })
   }
 
   const addHighlightSegment = () => {
@@ -175,7 +178,6 @@ export function useJoiner(t: (key: string) => string, setCustomModal: (modal: an
       })
       if (!response?.success) throw new Error(response?.message || 'Không thể xuất highlight.')
       void accountService.track(session, { feature: 'joiner', action: 'highlight_export_success', resource: `${response.paths?.length || 0} highlight outputs`, metadata: { outputMode: highlightOutputMode, ratio: highlightRatio } })
-      setHighlightOpen(false)
       setCustomModal({ show: true, title: 'HIGHLIGHT', message: response.message || 'Đã xuất highlight thành công.' })
     } catch (error: any) {
       const message = error?.message || String(error)
@@ -214,7 +216,7 @@ export function useJoiner(t: (key: string) => string, setCustomModal: (modal: an
     requirePillar, setRequirePillar, useGpu, setUseGpu, outputFolder, setOutputFolder,
     logoPath, setLogoPath, logoPosition, setLogoPosition, logoSize, setLogoSize, logoMode, setLogoMode,
     joinRatio, setJoinRatio, shortVersionEnabled, setShortVersionEnabled, shortDuration, setShortDuration, shortRatio, setShortRatio,
-    highlightOpen, setHighlightOpen, highlightSegments, chooseHighlightVideos, addHighlightSegment, updateHighlightSegment, removeHighlightSegment, highlightOutputMode, setHighlightOutputMode, highlightRatio, setHighlightRatio, highlightProcessing, handleHighlightExport,
+    highlightSegments, chooseHighlightVideos, addHighlightSegment, updateHighlightSegment, removeHighlightSegment, highlightOutputMode, setHighlightOutputMode, highlightRatio, setHighlightRatio, highlightProcessing, handleHighlightExport,
     isProcessing, isPaused, progressMsg, progressPercent,
     singleMode, setSingleMode, hardwareMode, setHardwareMode,
     gpuName, cpuName,

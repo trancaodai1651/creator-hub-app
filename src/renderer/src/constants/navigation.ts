@@ -10,6 +10,7 @@ export interface TabItem {
 export const SIDEBAR_TABS: TabItem[] = [
   { id: 'home', nameKey: 'dashboard', descKey: '', icon: '\u{1F3E0}' },
   { id: 'joiner', nameKey: 'videoJoiner', descKey: 'descJoiner', icon: '\u{1F3AC}', isWip: false },
+  { id: 'highlight', nameKey: 'highlightCutter', descKey: 'descHighlight', icon: '\u{2702}\u{FE0F}', isWip: false },
   { id: 'downloader', nameKey: 'videoDownloader', descKey: 'descDownloader', icon: '\u{1F4E5}', isWip: false },
   { id: 'publisher', nameKey: 'pubTitle', descKey: 'pubSub', icon: '\u{1F680}', isWip: true },
   { id: 'converter', nameKey: 'fileConverter', descKey: 'descConverter', icon: '\u{26A1}', isWip: true },

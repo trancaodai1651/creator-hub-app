@@ -4,6 +4,7 @@ export const en: Record<string, string> = {
   // 🚀 English Sidebar names are inherently short and fit well
   dashboard: "Dashboard",
   videoJoiner: "Video Joiner",
+  highlightCutter: "Highlight Cutter",
   videoDownloader: "Video Downloader",
   fileConverter: "File Converter",
   appTts: "AI Voice (TTS)",
@@ -39,6 +40,7 @@ export const en: Record<string, string> = {
 
   // --- Bento Grid Descriptions ---
   descJoiner: "Quickly merge multiple video files into one.",
+  descHighlight: "Cut one or more segments from long videos into new exports.",
   descDownloader: "Download high-quality videos from social media.",
   descConverter: "Convert media formats and embed/extract AI subtitles.",
   descTts: "Convert text to natural Adam ElevenLabs voice.",

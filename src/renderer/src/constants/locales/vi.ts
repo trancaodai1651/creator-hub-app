@@ -4,6 +4,7 @@ export const vi: Record<string, string> = {
   // 🚀 Tên chức năng trên Sidebar đã được rút gọn tối đa, chuẩn UX
   dashboard: "Tổng quan", 
   videoJoiner: "Gộp Video",
+  highlightCutter: "Cắt Highlight",
   videoDownloader: "Tải Video",
   fileConverter: "Chuyển Định Dạng",
   appTts: "Giọng đọc AI",
@@ -35,6 +36,7 @@ export const vi: Record<string, string> = {
 
   // --- Mô tả Bento Grid (Trang chủ) ---
   descJoiner: "Ghép nối nhiều tệp video thành một tệp hoàn chỉnh nhanh chóng.",
+  descHighlight: "Cắt một hoặc nhiều đoạn từ video dài thành các video mới.",
   descDownloader: "Tải xuống video chất lượng cao từ các nền tảng mạng xã hội.",
   descConverter: "Đổi đuôi Media và ép phụ đề/trích xuất sub AI.",
   descTts: "Chuyển văn bản thành giọng đọc Adam ElevenLabs.",
