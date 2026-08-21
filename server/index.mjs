@@ -21,7 +21,7 @@ const readData = () => {
 }
 let data = readData()
 const persist = () => { fs.mkdirSync(path.dirname(dataFile), { recursive: true }); fs.writeFileSync(dataFile, JSON.stringify(data, null, 2)) }
-const json = (res, status, body) => { res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Access-Control-Allow-Origin': process.env.HUB_ALLOWED_ORIGIN || '*', 'Access-Control-Allow-Headers': 'Content-Type, Authorization', 'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS' }); res.end(JSON.stringify(body)) }
+const json = (res, status, body) => { res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Access-Control-Allow-Origin': process.env.HUB_ALLOWED_ORIGIN || '*', 'Access-Control-Allow-Headers': 'Content-Type, Authorization', 'Access-Control-Allow-Methods': 'GET, POST, PATCH, DELETE, OPTIONS' }); res.end(JSON.stringify(body)) }
 const readBody = req => new Promise((resolve, reject) => { let raw = ''; req.on('data', chunk => { raw += chunk }); req.on('end', () => { try { resolve(raw ? JSON.parse(raw) : {}) } catch { reject(new Error('Invalid JSON')) } }); req.on('error', reject) })
 const id = () => crypto.randomUUID()
 const token = () => crypto.randomBytes(32).toString('hex')
@@ -86,6 +86,22 @@ const server = http.createServer(async (req, res) => {
       const record = createAccessCode(await readBody(req))
       if (!record.code || data.accessCodes.some(item => item.code === record.code && !item.revokedAt)) return json(res, 409, { message: 'Access code này đã tồn tại.' })
       data.accessCodes.unshift(record); persist(); return json(res, 201, { accessCode: record })
+    }
+    if (req.method === 'PATCH' && url.pathname.startsWith('/api/admin/access-codes/')) {
+      if (!auth(req, 'admin')) return json(res, 401, { message: 'Admin authentication required.' })
+      const record = data.accessCodes.find(item => item.id === decodeURIComponent(url.pathname.split('/').pop()))
+      if (!record) return json(res, 404, { message: 'Access code not found.' })
+      if (record.revokedAt) return json(res, 409, { message: 'Không thể sửa access code đã thu hồi.' })
+      const body = await readBody(req)
+      const code = String(body.code || '').trim().toUpperCase().slice(0, 40)
+      if (!code) return json(res, 400, { message: 'Access code không được để trống.' })
+      if (data.accessCodes.some(item => item.id !== record.id && item.code === code && !item.revokedAt)) return json(res, 409, { message: 'Access code này đã tồn tại.' })
+      record.code = code
+      record.label = String(body.label || 'External user').trim().slice(0, 80)
+      record.permissions = cleanPermissions(body.permissions)
+      record.expiresAt = body.expiresAt || undefined
+      persist()
+      return json(res, 200, { accessCode: record })
     }
     if (req.method === 'DELETE' && url.pathname.startsWith('/api/admin/access-codes/')) {
       if (!auth(req, 'admin')) return json(res, 401, { message: 'Admin authentication required.' })

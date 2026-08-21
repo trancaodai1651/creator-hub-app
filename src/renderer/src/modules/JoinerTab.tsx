@@ -205,7 +205,7 @@ export const JoinerTab: React.FC<JoinerTabProps> = ({ joiner, t, isDark, canUseS
             </label>
             <div className="mt-2 grid grid-cols-2 gap-2">
               <label className="text-[10px] font-medium opacity-60">Phút<input type="number" min="0.1" step="0.1" value={joiner.shortDuration} disabled={!canUseShortVersion || !joiner.shortVersionEnabled} onChange={event => joiner.setShortDuration(Number(event.target.value))} className="mt-1 w-full rounded-lg border border-current/10 bg-transparent px-2 py-1.5 text-xs outline-none" /></label>
-              <label className="text-[10px] font-medium opacity-60">Tỉ lệ<select value={joiner.shortRatio} disabled={!canUseShortVersion || !joiner.shortVersionEnabled} onChange={event => joiner.setShortRatio(event.target.value)} className="mt-1 w-full rounded-lg border border-current/10 bg-transparent px-2 py-1.5 text-xs outline-none"><option value="9:16">9:16 dọc</option><option value="1:1">1:1 vuông</option><option value="16:9">16:9 ngang</option></select></label>
+              <label className="text-[10px] font-medium opacity-60">Tỉ lệ<select value={joiner.shortRatio} disabled={!canUseShortVersion || !joiner.shortVersionEnabled} onChange={event => joiner.setShortRatio(event.target.value)} className="mt-1 w-full rounded-lg border border-current/10 bg-transparent px-2 py-1.5 text-xs outline-none"><option value="9:16">9:16 dọc</option><option value="3:4">3:4 dọc</option><option value="1:1">1:1 vuông</option><option value="4:3">4:3 ngang</option><option value="16:9">16:9 ngang</option></select></label>
             </div>
             {!canUseShortVersion && <p className="mt-1 text-[9px] text-amber-500">Access code chưa có quyền bản ngắn.</p>}
           </div>
@@ -280,11 +280,18 @@ export const JoinerTab: React.FC<JoinerTabProps> = ({ joiner, t, isDark, canUseS
                 <option value="top-left">Góc Trái Trên</option><option value="top-right">Góc Phải Trên</option><option value="bottom-left">Góc Trái Dưới</option><option value="bottom-right">Góc Phải Dưới</option>
               </select>
             </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className={`text-[11px] font-black uppercase tracking-widest ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`}>PHẠM VI ĐÓNG DẤU</label>
+              <select value={joiner.logoMode} onChange={(e) => joiner.setLogoMode(e.target.value)} className={`w-full border text-xs font-bold rounded-xl px-3 py-1.5 focus:border-red-500 focus:outline-none shadow-sm cursor-pointer h-[32px] ${isDark ? 'bg-[#0f0f12] border-zinc-800' : 'bg-zinc-50 border-zinc-200'}`}>
+                <option value="both">Dài + ngắn</option><option value="long">Chỉ video dài</option><option value="short">Chỉ video ngắn</option>
+              </select>
+            </div>
             
             <div className="flex flex-col gap-1.5">
               <label className={`text-[11px] font-black uppercase tracking-widest ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`}>TỶ LỆ KHUNG HÌNH XUẤT</label>
               <select value={joiner.joinRatio} onChange={(e) => joiner.setJoinRatio(e.target.value)} className={`w-full border text-xs text-red-500 font-black rounded-xl px-3 py-1.5 focus:border-red-500 focus:outline-none shadow-sm cursor-pointer h-[32px] ${isDark ? 'bg-[#0f0f12] border-zinc-800' : 'bg-zinc-50 border-zinc-200'}`}>
-                <option value="original">Bản gốc (Original Layout)</option><option value="16:9">Ngang chuẩn 16:9 (Youtube)</option><option value="9:16">Dọc 9:16 (Shorts/Reels/Tiktok)</option><option value="1:1">Vuông 1:1 (Square Feed)</option>
+                <option value="original">Bản gốc (Original Layout)</option><option value="16:9">Ngang chuẩn 16:9 (Youtube)</option><option value="4:3">Ngang 4:3</option><option value="9:16">Dọc 9:16 (Shorts/Reels/Tiktok)</option><option value="3:4">Dọc 3:4</option><option value="1:1">Vuông 1:1 (Square Feed)</option>
               </select>
             </div>
           </div>
@@ -296,7 +303,8 @@ export const JoinerTab: React.FC<JoinerTabProps> = ({ joiner, t, isDark, canUseS
         </div>
 
         {/* NÚT VẬN HÀNH */}
-        <div className="w-[180px] shrink-0 flex flex-col">
+        <div className="w-[180px] shrink-0 flex flex-col gap-3">
+          <div className="min-h-0 flex-1">
           {!joiner.isProcessing ? ( 
             <button onClick={joiner.handleStartProcess} className="w-full h-full bg-gradient-to-br from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white rounded-[24px] flex flex-col items-center justify-center gap-2 transition-all duration-300 hover:shadow-[0_15px_30px_-10px_rgba(239,68,68,0.6)] hover:-translate-y-1 active:scale-95 border border-red-400/50 relative overflow-hidden group">
               <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4IiBoZWlnaHQ9IjgiPgo8cmVjdCB3aWR0aD0iOCIgaGVpZ2h0PSI4IiBmaWxsPSIjZmZmIiBmaWxsLW9wYWNpdHk9IjAuMDUiLz4KPC9zdmc+')] opacity-20"></div>
@@ -316,9 +324,51 @@ export const JoinerTab: React.FC<JoinerTabProps> = ({ joiner, t, isDark, canUseS
               </button>
             </div> 
           )}
+          </div>
+          <button type="button" disabled={joiner.isProcessing || joiner.highlightProcessing} onClick={() => joiner.setHighlightOpen(true)} className="shrink-0 rounded-[18px] border border-blue-500/30 bg-blue-500/10 px-3 py-3 text-xs font-black text-blue-500 transition hover:bg-blue-500/20 disabled:cursor-not-allowed disabled:opacity-50">✂ CẮT HIGHLIGHT</button>
         </div>
 
       </div>
+
+      {joiner.highlightOpen && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/70 p-4 backdrop-blur-md">
+          <div className={`flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-[28px] border shadow-2xl ${isDark ? 'border-white/10 bg-[#171b23]' : 'border-white/70 bg-white'}`}>
+            <div className="flex items-center justify-between gap-4 border-b border-current/10 px-5 py-4 sm:px-6">
+              <div><p className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-500">Highlight editor</p><h2 className="mt-1 text-lg font-semibold">Cắt highlight từ video dài</h2></div>
+              <button type="button" onClick={() => joiner.setHighlightOpen(false)} className="rounded-full border border-current/10 px-3 py-2 text-sm opacity-70 hover:opacity-100">×</button>
+            </div>
+            <div className="custom-scrollbar min-h-0 flex-1 space-y-4 overflow-y-auto p-5 sm:p-6">
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-current/10 p-3">
+                <div className="min-w-0"><p className="text-xs font-semibold">Nguồn video</p><p className="mt-1 text-[10px] opacity-50">Chọn một hoặc nhiều video, sau đó thêm các đoạn cần cắt.</p></div>
+                <button type="button" onClick={() => void joiner.chooseHighlightVideos()} className="shrink-0 rounded-xl bg-blue-500 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-600">Chọn nhiều video</button>
+              </div>
+
+              <div className="space-y-2">
+                {joiner.highlightSegments.map((segment: any, index: number) => (
+                  <div key={segment.id} className="grid min-w-0 gap-2 rounded-2xl border border-current/10 p-3 sm:grid-cols-[minmax(0,1fr)_92px_92px_auto] sm:items-end">
+                    <label className="min-w-0 text-[10px] font-medium opacity-70">Video {index + 1}<select value={segment.videoPath} onChange={event => joiner.updateHighlightSegment(segment.id, { videoPath: event.target.value })} className="mt-1 w-full min-w-0 truncate rounded-xl border border-current/10 bg-transparent px-2 py-2 text-xs outline-none"><option value={segment.videoPath}>{segment.videoPath.split(/[/\\]/).pop()}</option>{joiner.highlightSegments.filter((item: any) => item.videoPath !== segment.videoPath).map((item: any) => <option key={item.videoPath} value={item.videoPath}>{item.videoPath.split(/[/\\]/).pop()}</option>)}</select></label>
+                    <label className="text-[10px] font-medium opacity-70">Bắt đầu (s)<input type="number" min="0" step="0.1" value={segment.startSecs} onChange={event => joiner.updateHighlightSegment(segment.id, { startSecs: Number(event.target.value) })} className="mt-1 w-full rounded-xl border border-current/10 bg-transparent px-2 py-2 text-xs outline-none" /></label>
+                    <label className="text-[10px] font-medium opacity-70">Kết thúc (s)<input type="number" min="0.1" step="0.1" value={segment.endSecs} onChange={event => joiner.updateHighlightSegment(segment.id, { endSecs: Number(event.target.value) })} className="mt-1 w-full rounded-xl border border-current/10 bg-transparent px-2 py-2 text-xs outline-none" /></label>
+                    <button type="button" onClick={() => joiner.removeHighlightSegment(segment.id)} className="rounded-xl border border-red-500/20 px-3 py-2 text-xs text-red-500 hover:bg-red-500/10">Xóa</button>
+                  </div>
+                ))}
+                {joiner.highlightSegments.length === 0 && <div className="rounded-2xl border border-dashed border-current/15 p-6 text-center text-xs opacity-50">Chưa có đoạn highlight. Hãy chọn video.</div>}
+                <button type="button" onClick={joiner.addHighlightSegment} className="rounded-xl border border-current/10 px-3 py-2 text-xs font-medium hover:bg-black/5 dark:hover:bg-white/10">+ Thêm đoạn highlight</button>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-3">
+                <label className="text-[10px] font-medium opacity-70">Kiểu xuất<select value={joiner.highlightOutputMode} onChange={event => joiner.setHighlightOutputMode(event.target.value)} className="mt-1 w-full rounded-xl border border-current/10 bg-transparent px-3 py-2 text-xs outline-none"><option value="single-long">Một video dài</option><option value="multiple-long">Nhiều video dài</option><option value="single-short">Một video ngắn</option><option value="multiple-short">Nhiều video ngắn</option></select></label>
+                <label className="text-[10px] font-medium opacity-70">Tỉ lệ khung hình<select value={joiner.highlightRatio} onChange={event => joiner.setHighlightRatio(event.target.value)} className="mt-1 w-full rounded-xl border border-current/10 bg-transparent px-3 py-2 text-xs outline-none"><option value="original">Bản gốc</option><option value="9:16">9:16</option><option value="3:4">3:4</option><option value="1:1">1:1</option><option value="4:3">4:3</option><option value="16:9">16:9</option></select></label>
+                <div className="rounded-xl border border-current/10 px-3 py-2 text-[10px] opacity-70">Logo: <strong>{joiner.logoMode === 'both' ? 'dài + ngắn' : joiner.logoMode === 'long' ? 'chỉ dài' : 'chỉ ngắn'}</strong><br />Dùng cấu hình logo hiện tại.</div>
+              </div>
+            </div>
+            <div className="flex flex-wrap justify-end gap-2 border-t border-current/10 p-5 sm:p-6">
+              <button type="button" onClick={() => joiner.setHighlightOpen(false)} className="rounded-xl border border-current/10 px-4 py-3 text-xs font-medium">Hủy</button>
+              <button type="button" disabled={joiner.highlightProcessing || joiner.highlightSegments.length === 0} onClick={() => void joiner.handleHighlightExport()} className="rounded-xl bg-blue-500 px-5 py-3 text-xs font-semibold text-white hover:bg-blue-600 disabled:cursor-wait disabled:opacity-50">{joiner.highlightProcessing ? 'ĐANG XỬ LÝ...' : 'XUẤT HIGHLIGHT'}</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

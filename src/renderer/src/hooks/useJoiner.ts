@@ -25,6 +25,7 @@ const formatHardwareName = (name: string) => {
 }
 
 export function useJoiner(t: (key: string) => string, setCustomModal: (modal: any) => void, session: HubSession | null = null) {
+  type HighlightSegment = { id: string; videoPath: string; startSecs: number; endSecs: number }
   const [videoList, setVideoList] = useState<string[]>([]) 
   const [minTime, setMinTime] = useState<number>(60)
   const [maxTime, setMaxTime] = useState<number>(70)
@@ -35,10 +36,17 @@ export function useJoiner(t: (key: string) => string, setCustomModal: (modal: an
   const [logoPosition, setLogoPosition] = useState<string>('top-right')
   
   const [logoSize, setLogoSize] = useState<number>(150) 
+  const [logoMode, setLogoMode] = useState<'both' | 'long' | 'short'>('both')
   const [joinRatio, setJoinRatio] = useState<string>('original')
   const [shortVersionEnabled, setShortVersionEnabled] = useState<boolean>(false)
   const [shortDuration, setShortDuration] = useState<number>(1)
   const [shortRatio, setShortRatio] = useState<string>('9:16')
+
+  const [highlightOpen, setHighlightOpen] = useState(false)
+  const [highlightSegments, setHighlightSegments] = useState<HighlightSegment[]>([])
+  const [highlightOutputMode, setHighlightOutputMode] = useState('multiple-long')
+  const [highlightRatio, setHighlightRatio] = useState('original')
+  const [highlightProcessing, setHighlightProcessing] = useState(false)
 
   const [singleMode, setSingleMode] = useState<boolean>(false)
   const [hardwareMode, setHardwareMode] = useState<string>('max')
@@ -82,7 +90,7 @@ export function useJoiner(t: (key: string) => string, setCustomModal: (modal: an
       feature: 'joiner',
       action: 'export_start',
       resource: `${videoList.length} video files`,
-      metadata: { minMins: minTime, maxMins: maxTime, ratio: joinRatio, singleMode, shortVersion: shortVersionEnabled, shortDuration, shortRatio }
+      metadata: { minMins: minTime, maxMins: maxTime, ratio: joinRatio, singleMode, shortVersion: shortVersionEnabled, shortDuration, shortRatio, logoMode }
     })
     setIsProcessing(true); setIsPaused(false); setProgressPercent(0); setProgressMsg(t('processing'))
     
@@ -95,19 +103,20 @@ export function useJoiner(t: (key: string) => string, setCustomModal: (modal: an
     try {
       const response: any = await tauriApi.invoke('start-joining', { 
         videoPaths: videoList, minMins: Number(minTime), maxMins: Number(maxTime),
-        requirePillar, outputDir: outputFolder, logoPath, logoPosition, 
+        requirePillar, outputDir: outputFolder, logoPath: logoMode === 'short' ? '' : logoPath, logoPosition,
         logoSize, ratio: joinRatio, useGpu, singleMode, hardwareMode
       })
       let message = response?.message || 'Đã hoàn thành phiên bản gốc.'
       if (response?.success && shortVersionEnabled) {
         try {
-          const joinedVideoPaths = Array.isArray(response?.paths) && response.paths.length > 0 ? response.paths : videoList
+          const joinedVideoPaths = Array.isArray(response?.paths) ? response.paths.filter(Boolean) : []
+          if (joinedVideoPaths.length === 0) throw new Error('Không tìm thấy file bản dài để tạo bản ngắn theo cùng kịch bản.')
           const shortResponse: any = await tauriApi.invoke('export-short-version', {
             videoPaths: joinedVideoPaths,
             outputDir: outputFolder,
             shortDurationMins: Number(shortDuration),
             shortRatio,
-            logoPath,
+            logoPath: logoMode === 'long' ? '' : logoPath,
             logoPosition,
             logoSize
           })
@@ -123,6 +132,57 @@ export function useJoiner(t: (key: string) => string, setCustomModal: (modal: an
       setIsProcessing(false); 
       setIsPaused(false); 
       if (unlistenProgress) unlistenProgress();
+    }
+  }
+
+  const chooseHighlightVideos = async () => {
+    const files: any[] = await tauriApi.invoke('open_multi_files_dialog')
+    const paths = (files || []).map(file => typeof file === 'string' ? file : file?.path).filter(Boolean)
+    if (paths.length === 0) return
+    setHighlightSegments(current => current.length > 0 ? current : paths.map((videoPath: string) => ({ id: crypto.randomUUID(), videoPath, startSecs: 0, endSecs: 60 })))
+  }
+
+  const addHighlightSegment = () => {
+    const videoPath = highlightSegments[0]?.videoPath || videoList[0] || ''
+    if (!videoPath) return
+    setHighlightSegments(current => [...current, { id: crypto.randomUUID(), videoPath, startSecs: 0, endSecs: 60 }])
+  }
+
+  const updateHighlightSegment = (id: string, patch: Partial<HighlightSegment>) => {
+    setHighlightSegments(current => current.map(segment => segment.id === id ? { ...segment, ...patch } : segment))
+  }
+
+  const removeHighlightSegment = (id: string) => setHighlightSegments(current => current.filter(segment => segment.id !== id))
+
+  const handleHighlightExport = async () => {
+    const segments = highlightSegments.filter(segment => segment.videoPath && segment.endSecs > segment.startSecs)
+    if (segments.length === 0) {
+      setCustomModal({ show: true, title: 'HIGHLIGHT', message: 'Hãy chọn video và nhập mốc kết thúc lớn hơn mốc bắt đầu.' })
+      return
+    }
+    setHighlightProcessing(true)
+    void accountService.track(session, { feature: 'joiner', action: 'highlight_export_start', resource: `${segments.length} highlight segments`, metadata: { outputMode: highlightOutputMode, ratio: highlightRatio, logoMode } })
+    try {
+      const isShort = highlightOutputMode.includes('short')
+      const response: any = await tauriApi.invoke('export-highlights', {
+        segments: segments.map(segment => ({ video_path: segment.videoPath, start_secs: Number(segment.startSecs), end_secs: Number(segment.endSecs) })),
+        outputDir: outputFolder,
+        outputMode: highlightOutputMode,
+        ratio: highlightRatio,
+        logoPath: logoMode === 'both' || (isShort && logoMode === 'short') || (!isShort && logoMode === 'long') ? logoPath : '',
+        logoPosition,
+        logoSize
+      })
+      if (!response?.success) throw new Error(response?.message || 'Không thể xuất highlight.')
+      void accountService.track(session, { feature: 'joiner', action: 'highlight_export_success', resource: `${response.paths?.length || 0} highlight outputs`, metadata: { outputMode: highlightOutputMode, ratio: highlightRatio } })
+      setHighlightOpen(false)
+      setCustomModal({ show: true, title: 'HIGHLIGHT', message: response.message || 'Đã xuất highlight thành công.' })
+    } catch (error: any) {
+      const message = error?.message || String(error)
+      void accountService.track(session, { feature: 'joiner', action: 'highlight_export_error', resource: 'Highlight export', metadata: { error: message } })
+      setCustomModal({ show: true, title: 'HIGHLIGHT ERROR', message })
+    } finally {
+      setHighlightProcessing(false)
     }
   }
 
@@ -152,8 +212,9 @@ export function useJoiner(t: (key: string) => string, setCustomModal: (modal: an
   return {
     videoList, setVideoList, minTime, setMinTime, maxTime, setMaxTime,
     requirePillar, setRequirePillar, useGpu, setUseGpu, outputFolder, setOutputFolder,
-    logoPath, setLogoPath, logoPosition, setLogoPosition, logoSize, setLogoSize,
+    logoPath, setLogoPath, logoPosition, setLogoPosition, logoSize, setLogoSize, logoMode, setLogoMode,
     joinRatio, setJoinRatio, shortVersionEnabled, setShortVersionEnabled, shortDuration, setShortDuration, shortRatio, setShortRatio,
+    highlightOpen, setHighlightOpen, highlightSegments, chooseHighlightVideos, addHighlightSegment, updateHighlightSegment, removeHighlightSegment, highlightOutputMode, setHighlightOutputMode, highlightRatio, setHighlightRatio, highlightProcessing, handleHighlightExport,
     isProcessing, isPaused, progressMsg, progressPercent,
     singleMode, setSingleMode, hardwareMode, setHardwareMode,
     gpuName, cpuName,

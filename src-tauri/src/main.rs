@@ -72,6 +72,7 @@ fn main() {
             commands::joiner::resume_joining,
             commands::joiner::cancel_joining,
             commands::short_export::export_short_version,
+            commands::highlight::export_highlights,
             commands::converter::convert_file,
             commands::publisher::select_publisher_video_file,
             commands::publisher::setup_publisher_account,

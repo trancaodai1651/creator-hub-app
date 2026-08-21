@@ -141,6 +141,19 @@ export const accountService = {
     return record
   },
 
+  updateAccessCode: async (session: HubSession, id: string, input: { code: string; label: string; permissions: HubPermission[]; expiresAt?: string }) => {
+    if (API_URL) return (await request<{ accessCode: AccessCodeRecord }>(`/admin/access-codes/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(input) }, session.token)).accessCode
+    const state = readLocalState()
+    const record = state.accessCodes.find(item => item.id === id)
+    if (!record) throw new Error('Không tìm thấy access code.')
+    const normalizedCode = input.code.trim().toUpperCase()
+    if (!normalizedCode) throw new Error('Access code không được để trống.')
+    if (state.accessCodes.some(item => item.id !== id && item.code === normalizedCode && !item.revokedAt)) throw new Error('Access code này đã tồn tại.')
+    Object.assign(record, { code: normalizedCode, label: input.label.trim() || 'External user', permissions: input.permissions, expiresAt: input.expiresAt || undefined })
+    writeLocalState(state)
+    return record
+  },
+
   revokeAccessCode: async (session: HubSession, id: string) => {
     if (API_URL) { await request(`/admin/access-codes/${encodeURIComponent(id)}`, { method: 'DELETE' }, session.token); return }
     const state = readLocalState()

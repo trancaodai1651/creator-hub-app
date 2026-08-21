@@ -2,7 +2,7 @@ use serde_json::{json, Value};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
-use tauri::{AppHandle, Manager};
+use tauri::{AppHandle, Emitter, Manager};
 
 #[cfg(target_os = "windows")]
 use std::os::windows::process::CommandExt;
@@ -26,6 +26,7 @@ pub async fn export_short_version(
     if valid_paths.is_empty() {
         return Err("Không tìm thấy video đầu vào hợp lệ.".to_string());
     }
+    let _ = app.emit("join-progress", json!({ "message": "Giai đoạn 4/4: Bản dài đã xong, đang xuất bản ngắn theo cùng kịch bản...", "percent": 0 }));
 
     let resource_dir = app.path().resource_dir().map_err(|error| error.to_string())?;
     let ffmpeg_exe = resource_dir.join("resources").join(if cfg!(target_os = "windows") { "ffmpeg.exe" } else { "ffmpeg" });
@@ -41,11 +42,13 @@ pub async fn export_short_version(
     let stamp = chrono::Utc::now().timestamp_millis();
     let list_path = final_output_dir.join(format!("creator_hub_short_list_{}.txt", stamp));
     let ratio = match short_ratio.as_str() {
-        "16:9" | "9:16" | "1:1" => short_ratio.as_str(),
+        "16:9" | "9:16" | "3:4" | "1:1" | "4:3" => short_ratio.as_str(),
         _ => "9:16",
     };
     let ratio_filter = match ratio {
         "16:9" => "scale=1920:1080:force_original_aspect_ratio=increase,crop=1920:1080",
+        "4:3" => "scale=1440:1080:force_original_aspect_ratio=increase,crop=1440:1080",
+        "3:4" => "scale=1080:1440:force_original_aspect_ratio=increase,crop=1080:1440",
         "1:1" => "scale=1080:1080:force_original_aspect_ratio=increase,crop=1080:1080",
         _ => "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920",
     };
@@ -61,7 +64,7 @@ pub async fn export_short_version(
     command.args(["-y", "-v", "warning", "-f", "concat", "-safe", "0", "-i"]).arg(&list_path);
 
     if has_logo {
-        command.arg("-i").arg(&logo_path);
+        command.args(["-loop", "1", "-i"]).arg(&logo_path);
         let overlay = match logo_position.as_str() {
             "top-right" => "main_w-overlay_w-25:25",
             "bottom-left" => "25:main_h-overlay_h-25",
@@ -88,6 +91,7 @@ pub async fn export_short_version(
         return Err(if message.is_empty() { "FFmpeg không thể xuất bản ngắn.".to_string() } else { message });
     }
 
+    let _ = app.emit("join-progress", json!({ "message": "Đã hoàn thành bản dài và bản ngắn.", "percent": 100 }));
     Ok(json!({
         "success": true,
         "path": output_path.to_string_lossy(),

@@ -10,3 +10,4 @@ pub mod converter;
 pub mod publisher;
 pub mod updater;
 pub mod short_export;
+pub mod highlight;

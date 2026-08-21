@@ -273,7 +273,9 @@ pub async fn start_joining(
                 let ratio_filter = match ratio.as_str() {
                     "16:9" => "scale=1920:1080:force_original_aspect_ratio=increase,crop=1920:1080",
                     "9:16" => "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920",
+                    "3:4" => "scale=1080:1440:force_original_aspect_ratio=increase,crop=1080:1440",
                     "1:1" => "scale=1080:1080:force_original_aspect_ratio=increase,crop=1080:1080",
+                    "4:3" => "scale=1440:1080:force_original_aspect_ratio=increase,crop=1440:1080",
                     _ => "scale=trunc(iw/2)*2:trunc(ih/2)*2",
                 };
 
