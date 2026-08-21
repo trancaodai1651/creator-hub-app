@@ -43,6 +43,12 @@ export const SettingsTab: React.FC<{ cfg: any, t: any, colors: any, isDark: bool
       </section>
 
       <section className="glass-subtle rounded-2xl border p-4">
+        <label className="mb-2 block text-sm font-semibold">Khóa Gemini API miễn phí</label>
+        <input type="password" value={cfg.geminiKey || ''} onChange={event => cfg.setGeminiKey(event.target.value)} placeholder="AIza..." className={inputClass} />
+        <p className={`mt-2 text-xs leading-5 ${colors.c_textSub}`}>Dùng cho tạo kịch bản đa dạng theo nền tảng và thời lượng. Khóa chỉ được lưu trên thiết bị này.</p>
+      </section>
+
+      <section className="glass-subtle rounded-2xl border p-4">
         <label className="mb-2 block text-sm font-semibold">Giọng đọc AI cục bộ</label>
         <div className={`rounded-2xl border px-4 py-3 text-sm leading-6 ${colors.c_bgInput} ${isDark ? 'text-zinc-300' : 'text-zinc-700'}`}>
           OmniVoice được tích hợp trong tab Giọng đọc AI. Giọng clone và tệp âm thanh được lưu theo dự án, không cần khóa dịch vụ bên ngoài.

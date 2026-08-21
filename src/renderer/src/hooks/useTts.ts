@@ -1,6 +1,16 @@
 /* eslint-disable */
 import { useEffect, useMemo, useState } from 'react'
 import { tauriApi } from '../utils/tauriAdapter'
+import { generateGeminiScript } from '../services/geminiScriptService'
+
+export const GEMINI_SCRIPT_STYLES = [
+  { id: 'auto', label: 'Tự động đa dạng', prompt: 'Tự chọn góc triển khai mới, phù hợp nhất với sản phẩm và nền tảng.' },
+  { id: 'story', label: 'Kể chuyện đời thường', prompt: 'Mở bằng một tình huống đời thường rồi dẫn tự nhiên đến giải pháp của sản phẩm.' },
+  { id: 'problem', label: 'Vấn đề và giải pháp', prompt: 'Nêu một nỗi đau cụ thể, sau đó giải thích sản phẩm giải quyết ra sao.' },
+  { id: 'review', label: 'Đánh giá chân thật', prompt: 'Giọng như một người đã trải nghiệm, cân bằng giữa điểm tốt và thông tin thực tế.' },
+  { id: 'comparison', label: 'So sánh lựa chọn', prompt: 'Giúp người xem phân biệt sản phẩm với lựa chọn thông thường mà không công kích đối thủ.' },
+  { id: 'unboxing', label: 'Mở hộp và khám phá', prompt: 'Tạo cảm giác khám phá từng điểm đáng chú ý, phù hợp video giới thiệu sản phẩm.' }
+] as const
 
 export type OmniVoiceRecord = {
   id: string
@@ -59,8 +69,10 @@ const buildScript = (platform: string, product: string, benefits: string, proof:
   return `Dừng lại 3 giây nếu bạn đang tìm ${name}!\n\nĐiều khiến sản phẩm này được chú ý là ${value}. ${trust}.\n\nTin vui là ${deal}.\n\n${action}.`
 }
 
-export function useTts(t: any, setCustomModal: any, activeTab: string) {
+export function useTts(t: any, setCustomModal: any, activeTab: string, geminiKey = '') {
   const [platform, setPlatform] = useState<'tiktok' | 'shopee' | 'facebook'>('tiktok')
+  const [targetDuration, setTargetDuration] = useState(30)
+  const [scriptStyle, setScriptStyle] = useState('auto')
   const [productName, setProductName] = useState('')
   const [benefits, setBenefits] = useState('')
   const [proof, setProof] = useState('')
@@ -81,11 +93,18 @@ export function useTts(t: any, setCustomModal: any, activeTab: string) {
   const [isTtsProcessing, setIsTtsProcessing] = useState(false)
   const [isCloning, setIsCloning] = useState(false)
   const [isInstalling, setIsInstalling] = useState(false)
+  const [isGeneratingScript, setIsGeneratingScript] = useState(false)
   const [generatedPath, setGeneratedPath] = useState('')
 
   const detectedLanguage = useMemo(() => languageFromScript(scriptText), [scriptText])
   const isApproved = Boolean(approvedScript && approvedScript === scriptText.trim())
   const selectedVoice = voiceLibrary.find(voice => voice.id === selectedVoiceId) || DEFAULT_VOICE
+  const configuredGeminiKey = geminiKey.trim() || String(import.meta.env.VITE_GEMINI_API_KEY || '')
+  const geminiConfigured = Boolean(configuredGeminiKey)
+  const estimatedDuration = useMemo(() => {
+    const words = scriptText.trim().split(/\s+/).filter(Boolean).length
+    return words ? Math.max(1, Math.round(words / 2.4)) : 0
+  }, [scriptText])
 
   const refreshStatus = async () => {
     try {
@@ -117,6 +136,32 @@ export function useTts(t: any, setCustomModal: any, activeTab: string) {
   const handleGenerateScript = () => {
     setScriptText(buildScript(platform, productName, benefits, proof, offer, cta))
     setApprovedScript('')
+  }
+
+  const handleGenerateGeminiScript = async () => {
+    if (!configuredGeminiKey) return showError('Hãy nhập khóa Gemini API trong Cài đặt trước khi tạo kịch bản bằng Gemini.')
+    setIsGeneratingScript(true)
+    try {
+      const selectedStyle = GEMINI_SCRIPT_STYLES.find(style => style.id === scriptStyle) || GEMINI_SCRIPT_STYLES[0]
+      const text = await generateGeminiScript({
+        apiKey: configuredGeminiKey,
+        platform,
+        targetDuration,
+        style: selectedStyle.prompt,
+        productName,
+        benefits,
+        proof,
+        offer,
+        cta,
+        variationSeed: Math.floor(Math.random() * 1000000)
+      })
+      setScriptText(text)
+      setApprovedScript('')
+    } catch (error: any) {
+      showError(String(error))
+    } finally {
+      setIsGeneratingScript(false)
+    }
   }
 
   const handleApproveScript = () => {
@@ -193,12 +238,13 @@ export function useTts(t: any, setCustomModal: any, activeTab: string) {
   }
 
   return {
-    platform, setPlatform, productName, setProductName, benefits, setBenefits, proof, setProof, offer, setOffer, cta, setCta,
+    platform, setPlatform, targetDuration, setTargetDuration, scriptStyle, setScriptStyle, geminiConfigured, isGeneratingScript,
+    productName, setProductName, benefits, setBenefits, proof, setProof, offer, setOffer, cta, setCta,
     scriptText, setScriptText: (value: string) => { setScriptText(value); if (approvedScript !== value.trim()) setApprovedScript('') },
-    approvedScript, isApproved, handleGenerateScript, handleApproveScript, handleUsePastedScript,
+    approvedScript, isApproved, handleGenerateScript, handleGenerateGeminiScript, handleApproveScript, handleUsePastedScript,
     voiceLibrary, selectedVoiceId, setSelectedVoiceId, selectedVoice, referenceAudio, setReferenceAudio, referenceText, setReferenceText,
     voiceName, setVoiceName, voiceInstruction, setVoiceInstruction, projectDir, setProjectDir, outputDir, setOutputDir,
     device, setDevice, status, refreshStatus, isTtsProcessing, isCloning, isInstalling, handleInstallRuntime, handleCloneVoice,
-    detectedLanguage, generatedPath, handleGenerateTTS, t
+    detectedLanguage, estimatedDuration, generatedPath, handleGenerateTTS, t
   }
 }

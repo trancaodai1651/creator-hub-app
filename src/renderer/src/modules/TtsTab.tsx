@@ -1,6 +1,7 @@
 /* eslint-disable */
 import React from 'react'
 import { tauriApi } from '../utils/tauriAdapter'
+import { GEMINI_SCRIPT_STYLES } from '../hooks/useTts'
 
 const fieldClass = 'glass-input w-full rounded-2xl border px-4 py-3 text-sm outline-none transition focus:border-red-400/70 focus:ring-2 focus:ring-red-400/10'
 const buttonClass = 'glass-button rounded-2xl border px-4 py-3 text-sm font-semibold transition hover:-translate-y-0.5 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-50'
@@ -57,6 +58,21 @@ export const TtsTab: React.FC<{ tts: any, t: any, colors: any }> = ({ tts, color
         </div>
       </section>
 
+      <section className="grid gap-3 xl:grid-cols-[minmax(260px,0.75fr)_minmax(0,1.25fr)]">
+        <div className="glass-subtle rounded-2xl border p-3">
+          <label className="mb-2 block text-xs font-semibold uppercase tracking-wide opacity-65">Thời lượng mục tiêu (giây)</label>
+          <input type="number" min="5" max="600" step="5" value={tts.targetDuration} onChange={event => tts.setTargetDuration(Math.max(5, Math.min(600, Number(event.target.value) || 5)))} className={fieldClass} />
+          <p className={`mt-2 text-[11px] ${colors.c_textSub}`}>Gemini điều chỉnh số từ theo thời lượng đã chọn.</p>
+        </div>
+        <div className="glass-subtle rounded-2xl border p-3">
+          <label className="mb-2 block text-xs font-semibold uppercase tracking-wide opacity-65">Góc triển khai đa dạng</label>
+          <select value={tts.scriptStyle} onChange={event => tts.setScriptStyle(event.target.value)} className={fieldClass}>
+            {GEMINI_SCRIPT_STYLES.map(style => <option key={style.id} value={style.id}>{style.label}</option>)}
+          </select>
+          <p className={`mt-2 text-[11px] ${colors.c_textSub}`}>{tts.geminiConfigured ? 'Gemini sẵn sàng tạo phiên bản mới.' : 'Nhập khóa Gemini trong Cài đặt để sử dụng.'}</p>
+        </div>
+      </section>
+
       <section className="grid min-h-0 gap-4 xl:grid-cols-[minmax(0,1.18fr)_minmax(340px,0.82fr)]">
         <div className="glass-subtle flex min-h-0 flex-col gap-4 rounded-2xl border p-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
@@ -75,12 +91,18 @@ export const TtsTab: React.FC<{ tts: any, t: any, colors: any }> = ({ tts, color
             <input value={tts.cta} onChange={event => tts.setCta(event.target.value)} placeholder="Lời kêu gọi hành động" className={fieldClass} />
           </div>
 
-          <button type="button" onClick={tts.handleGenerateScript} className="rounded-2xl bg-red-500 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-red-500/15 transition hover:bg-red-400">Tạo khung kịch bản {tts.platform === 'tiktok' ? 'TikTok' : tts.platform === 'shopee' ? 'Shopee' : 'Facebook'}</button>
+          <div className="grid gap-2 sm:grid-cols-2">
+            <button type="button" onClick={tts.handleGenerateGeminiScript} disabled={tts.isGeneratingScript} className="rounded-2xl bg-red-500 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-red-500/15 transition hover:bg-red-400 disabled:cursor-wait disabled:opacity-50">{tts.isGeneratingScript ? 'Gemini đang viết...' : 'Tạo kịch bản bằng Gemini'}</button>
+            <button type="button" onClick={tts.handleGenerateScript} className={`${buttonClass} text-sm`}>Tạo nhanh bằng mẫu có sẵn</button>
+          </div>
 
           <div className="flex min-h-0 flex-1 flex-col gap-2">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <label className="text-xs font-semibold uppercase tracking-wide opacity-65">Biên tập hoặc dán kịch bản</label>
-              <span className={`text-xs ${colors.c_textSub}`}>Ngôn ngữ nhận diện: <strong className="font-semibold text-red-500">{tts.detectedLanguage.label}</strong></span>
+              <div className={`flex flex-wrap items-center gap-3 text-xs ${colors.c_textSub}`}>
+                <span>Ngôn ngữ: <strong className="font-semibold text-red-500">{tts.detectedLanguage.label}</strong></span>
+                {tts.estimatedDuration > 0 && <span>Ước tính: <strong className="font-semibold text-red-500">{tts.estimatedDuration} giây</strong> · Mục tiêu: <strong className="font-semibold text-red-500">{tts.targetDuration} giây</strong></span>}
+              </div>
             </div>
             <textarea value={tts.scriptText} onChange={event => tts.setScriptText(event.target.value)} placeholder="Dán kịch bản sản phẩm vào đây nếu không dùng mẫu tự động..." className={`${fieldClass} min-h-[250px] flex-1 resize-y leading-6`} />
             <div className="flex flex-wrap gap-2">
