@@ -74,7 +74,9 @@ fn main() {
             commands::converter::convert_file,
             commands::publisher::select_publisher_video_file,
             commands::publisher::setup_publisher_account,
-            commands::publisher::trigger_puppeteer_publish
+            commands::publisher::trigger_puppeteer_publish,
+            commands::updater::check_for_updates,
+            commands::updater::trigger_auto_update,
         ])
         .run(tauri::generate_context!())
         .expect("Lỗi khi chạy phần mềm Tauri");

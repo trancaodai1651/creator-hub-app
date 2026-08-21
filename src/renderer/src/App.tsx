@@ -134,6 +134,19 @@ export default function App() {
     return () => { clearTimeout(progressTimer); clearTimeout(fadeTimer); clearTimeout(doneTimer) }
   }, [])
 
+  useEffect(() => {
+    let unlisten: (() => void) | undefined
+    void tauriApi.on('update-progress', payload => {
+      setUpdateProgress({
+        show: true,
+        msg: payload?.message || t('updateConnecting'),
+        percent: Number(payload?.percent || 0)
+      })
+    }).then(cleanup => { unlisten = cleanup })
+
+    return () => { unlisten?.() }
+  }, [language])
+
   const handleTabChange = (tabId: string) => {
     const tab = SIDEBAR_TABS.find(item => item.id === tabId)
     if (tab?.isWip) return
@@ -150,7 +163,12 @@ export default function App() {
           message: `${result.releaseNotes || ''}\n\nConfirm to download the update.`,
           onConfirm: async () => {
             setUpdateProgress({ show: true, msg: t('updateConnecting'), percent: 0 })
-            await tauriApi.invoke('trigger_auto_update', { downloadUrl: result.downloadUrl, fileName: result.fileName, language })
+            try {
+              await tauriApi.invoke('trigger_auto_update', { downloadUrl: result.downloadUrl, fileName: result.fileName, language })
+            } catch (error: any) {
+              setUpdateProgress(null)
+              setCustomModal({ show: true, title: t('updateError') || 'UPDATE DOWNLOAD ERROR', message: String(error) })
+            }
           }
         })
       } else if (isManual) {
@@ -160,6 +178,12 @@ export default function App() {
       if (isManual) setCustomModal({ show: true, title: 'UPDATE CHECK FAILED', message: String(error) })
     }
   }
+
+  useEffect(() => {
+    if (isFirstRun) return
+    const timer = window.setTimeout(() => { void handleCheckUpdate(false) }, 2200)
+    return () => window.clearTimeout(timer)
+  }, [isFirstRun])
 
   const colors = isDark ? DARK_THEME : LIGHT_THEME
   const visibleTabs = SIDEBAR_TABS.filter(tab => tab.id !== 'home')

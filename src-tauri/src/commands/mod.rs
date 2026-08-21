@@ -8,3 +8,4 @@ pub mod installer;
 pub mod joiner;
 pub mod converter;
 pub mod publisher;
+pub mod updater;
