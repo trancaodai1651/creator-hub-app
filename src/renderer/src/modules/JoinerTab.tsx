@@ -1,6 +1,7 @@
 /* eslint-disable */
 import React, { useEffect, useState } from 'react'
 import { tauriApi } from '../utils/tauriAdapter'
+import { ScenarioSheet } from '../components/ScenarioSheet'
 
 interface JoinerTabProps {
   joiner: any
@@ -9,8 +10,8 @@ interface JoinerTabProps {
 }
 
 const fileName = (path: string) => path.split(/[/\\]/).pop() || path
-const panelClass = (isDark: boolean) => `rounded-[28px] border p-4 shadow-sm sm:p-5 ${isDark ? 'border-white/10 bg-white/[0.035]' : 'border-zinc-200/80 bg-white/70'}`
-const fieldClass = (isDark: boolean) => `mt-2 h-11 w-full rounded-2xl border px-3 text-sm outline-none transition focus:border-red-400 focus:ring-4 focus:ring-red-500/10 ${isDark ? 'border-white/10 bg-white/[0.06] text-white' : 'border-zinc-200 bg-white text-zinc-800'}`
+const panelClass = (isDark: boolean) => `rounded-[30px] border p-4 shadow-sm sm:p-5 ${isDark ? 'border-white/10 bg-white/[0.06]' : 'border-zinc-200/80 bg-white/88'}`
+const fieldClass = (isDark: boolean) => `mt-2 h-11 w-full rounded-2xl border px-3 text-sm outline-none transition focus:border-red-400 focus:ring-4 focus:ring-red-500/10 ${isDark ? 'border-white/10 bg-white/[0.08] text-white' : 'border-zinc-200 bg-white/90 text-zinc-800'}`
 
 const formatHardwareName = (name: string) => {
   if (!name) return ''
@@ -26,6 +27,7 @@ const formatHardwareName = (name: string) => {
 export const JoinerTab: React.FC<JoinerTabProps> = ({ joiner, isDark, canUseShortVersion = true }) => {
   const [formattedGpu, setFormattedGpu] = useState('Đang tải GPU...')
   const [formattedCpu, setFormattedCpu] = useState('Đang tải CPU...')
+  const [showScenario, setShowScenario] = useState(false)
 
   useEffect(() => {
     let mounted = true
@@ -106,7 +108,8 @@ export const JoinerTab: React.FC<JoinerTabProps> = ({ joiner, isDark, canUseShor
         </div>
       </div>
 
-      <footer className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-current/10 pt-4"><p className="text-xs opacity-55">{joiner.shortVersionEnabled ? 'Bản ngắn sẽ bắt đầu sau khi bản dài hoàn tất.' : 'Chế độ mặc định chỉ xuất bản dài.'}</p>{joiner.isProcessing ? <div className="flex gap-2"><button type="button" onClick={joiner.handlePauseToggle} className="rounded-2xl border border-current/10 px-4 py-3 text-xs font-semibold hover:bg-black/5 dark:hover:bg-white/10">{joiner.isPaused ? 'Tiếp tục' : 'Tạm dừng'}</button><button type="button" onClick={joiner.handleCancel} className="rounded-2xl bg-red-500 px-4 py-3 text-xs font-semibold text-white hover:bg-red-600">Hủy</button></div> : <button type="button" disabled={joiner.videoList.length === 0} onClick={joiner.handleStartProcess} className="rounded-2xl bg-red-500 px-7 py-3 text-xs font-semibold text-white shadow-lg shadow-red-500/20 transition hover:-translate-y-0.5 hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-40">BẮT ĐẦU GỘP VIDEO</button>}</footer>
+      <footer className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-current/10 pt-4"><p className="text-xs opacity-55">{joiner.shortVersionEnabled ? 'Bản ngắn sẽ bắt đầu sau khi bản dài hoàn tất.' : 'Chế độ mặc định chỉ xuất bản dài.'}</p><div className="flex flex-wrap gap-2">{(joiner.isProcessing || joiner.joinScenarioScripts.length > 0) && <button type="button" onClick={() => setShowScenario(true)} className="rounded-2xl border border-current/10 px-4 py-3 text-xs font-semibold transition hover:bg-current/8">Xem kịch bản</button>}{joiner.isProcessing ? <div className="flex gap-2"><button type="button" onClick={joiner.handlePauseToggle} className="rounded-2xl border border-current/10 px-4 py-3 text-xs font-semibold hover:bg-black/5 dark:hover:bg-white/10">{joiner.isPaused ? 'Tiếp tục' : 'Tạm dừng'}</button><button type="button" onClick={joiner.handleCancel} className="rounded-2xl bg-red-500 px-4 py-3 text-xs font-semibold text-white hover:bg-red-600">Hủy</button></div> : <button type="button" disabled={joiner.videoList.length === 0} onClick={joiner.handleStartProcess} className="rounded-2xl bg-red-500 px-7 py-3 text-xs font-semibold text-white shadow-lg shadow-red-500/20 transition hover:-translate-y-0.5 hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-40">BẮT ĐẦU GỘP VIDEO</button>}</div></footer>
+      {showScenario && <ScenarioSheet scripts={joiner.joinScenarioScripts} isDark={isDark} title="Kịch bản gộp video" onClose={() => setShowScenario(false)} />}
     </div>
   )
 }

@@ -45,7 +45,15 @@ export function useJoiner(t: (key: string) => string, setCustomModal: (modal: an
   const [highlightSegments, setHighlightSegments] = useState<HighlightSegment[]>([])
   const [highlightOutputMode, setHighlightOutputMode] = useState('multiple-long')
   const [highlightRatio, setHighlightRatio] = useState('original')
+  const [highlightShortDuration, setHighlightShortDuration] = useState<number>(1)
+  const [highlightShortRatio, setHighlightShortRatio] = useState('9:16')
+  const [highlightProcessingMode, setHighlightProcessingMode] = useState<'direct' | 'random'>('direct')
+  const [highlightMinTime, setHighlightMinTime] = useState<number>(1)
+  const [highlightMaxTime, setHighlightMaxTime] = useState<number>(3)
+  const [highlightRequirePillar, setHighlightRequirePillar] = useState<boolean>(true)
   const [highlightProcessing, setHighlightProcessing] = useState(false)
+  const [joinScenarioScripts, setJoinScenarioScripts] = useState<any[]>([])
+  const [highlightScenarioScripts, setHighlightScenarioScripts] = useState<any[]>([])
 
   const [singleMode, setSingleMode] = useState<boolean>(false)
   const [hardwareMode, setHardwareMode] = useState<string>('max')
@@ -71,6 +79,24 @@ export function useJoiner(t: (key: string) => string, setCustomModal: (modal: an
       .catch(() => setCpuName('CPU Hệ Thống'));
   }, []);
 
+  useEffect(() => {
+    let active = true
+    let unlistenScenario: (() => void) | null = null
+    void tauriApi.on('join-scenario', (data: any) => {
+      if (!active || !Array.isArray(data?.scripts)) return
+      if (data.scope === 'highlight') setHighlightScenarioScripts(data.scripts)
+      else if (data.scope === 'joiner-short') setJoinScenarioScripts(current => [...current, ...data.scripts])
+      else setJoinScenarioScripts(data.scripts)
+    }).then(unlisten => {
+      if (!active) unlisten()
+      else unlistenScenario = unlisten
+    })
+    return () => {
+      active = false
+      if (unlistenScenario) unlistenScenario()
+    }
+  }, [])
+
   const scanDirectory = async (folderPath: string) => {
     if (!folderPath) return
     try { 
@@ -92,6 +118,7 @@ export function useJoiner(t: (key: string) => string, setCustomModal: (modal: an
       metadata: { minMins: minTime, maxMins: maxTime, ratio: joinRatio, singleMode, shortVersion: shortVersionEnabled, shortDuration, shortRatio, logoMode }
     })
     setIsProcessing(true); setIsPaused(false); setProgressPercent(0); setProgressMsg(t('processing'))
+    setJoinScenarioScripts([])
     
     unlistenProgress = await tauriApi.on('join-progress', (data: any) => {
       setProgressMsg(data.message)
@@ -103,8 +130,9 @@ export function useJoiner(t: (key: string) => string, setCustomModal: (modal: an
       const response: any = await tauriApi.invoke('start-joining', { 
         videoPaths: videoList, minMins: Number(minTime), maxMins: Number(maxTime),
         requirePillar, outputDir: outputFolder, logoPath: logoMode === 'short' ? '' : logoPath, logoPosition,
-        logoSize, ratio: joinRatio, useGpu, singleMode, hardwareMode
+        logoSize, ratio: joinRatio, useGpu, videoEncoder: undefined, singleMode, hardwareMode
       })
+      if (Array.isArray(response?.scripts)) setJoinScenarioScripts(response.scripts)
       let message = response?.message || 'Đã hoàn thành phiên bản gốc.'
       if (response?.success && shortVersionEnabled === true) {
         try {
@@ -117,8 +145,12 @@ export function useJoiner(t: (key: string) => string, setCustomModal: (modal: an
             shortRatio,
             logoPath: logoMode === 'long' ? '' : logoPath,
             logoPosition,
-            logoSize
+            logoSize,
+            useGpu,
+            videoEncoder: undefined,
+            hardwareMode
           })
+          if (Array.isArray(shortResponse?.scripts)) setJoinScenarioScripts(current => [...current, ...shortResponse.scripts])
           message = `${message}\n\n${shortResponse?.message || 'Đã xuất thêm phiên bản ngắn.'}`
         } catch (shortError: any) {
           message = `${message}\n\nKhông thể xuất bản ngắn: ${String(shortError)}`
@@ -164,7 +196,8 @@ export function useJoiner(t: (key: string) => string, setCustomModal: (modal: an
       return
     }
     setHighlightProcessing(true)
-    void accountService.track(session, { feature: 'joiner', action: 'highlight_export_start', resource: `${segments.length} đoạn nổi bật`, metadata: { outputMode: highlightOutputMode, ratio: highlightRatio, logoMode } })
+    setHighlightScenarioScripts([])
+    void accountService.track(session, { feature: 'joiner', action: 'highlight_export_start', resource: `${segments.length} đoạn nổi bật`, metadata: { outputMode: highlightOutputMode, ratio: highlightRatio, logoMode, processingMode: highlightProcessingMode } })
     try {
       const isShort = highlightOutputMode.includes('short')
       const response: any = await tauriApi.invoke('export-highlights', {
@@ -172,11 +205,21 @@ export function useJoiner(t: (key: string) => string, setCustomModal: (modal: an
         outputDir: outputFolder,
         outputMode: highlightOutputMode,
         ratio: highlightRatio,
+        shortDurationMins: Number(highlightShortDuration),
+        shortRatio: highlightShortRatio,
+        randomScript: highlightProcessingMode === 'random',
+        minMins: Number(highlightMinTime),
+        maxMins: Number(highlightMaxTime),
+        requirePillar: highlightRequirePillar,
+        useGpu,
+        videoEncoder: undefined,
+        hardwareMode,
         logoPath: logoMode === 'both' || (isShort && logoMode === 'short') || (!isShort && logoMode === 'long') ? logoPath : '',
         logoPosition,
         logoSize
       })
       if (!response?.success) throw new Error(response?.message || 'Không thể xuất đoạn nổi bật.')
+      if (Array.isArray(response?.scripts)) setHighlightScenarioScripts(response.scripts)
       void accountService.track(session, { feature: 'joiner', action: 'highlight_export_success', resource: `${response.paths?.length || 0} tệp đầu ra`, metadata: { outputMode: highlightOutputMode, ratio: highlightRatio } })
       setCustomModal({ show: true, title: 'ĐOẠN NỔI BẬT', message: response.message || 'Đã xuất đoạn nổi bật thành công.' })
     } catch (error: any) {
@@ -216,7 +259,7 @@ export function useJoiner(t: (key: string) => string, setCustomModal: (modal: an
     requirePillar, setRequirePillar, useGpu, setUseGpu, outputFolder, setOutputFolder,
     logoPath, setLogoPath, logoPosition, setLogoPosition, logoSize, setLogoSize, logoMode, setLogoMode,
     joinRatio, setJoinRatio, shortVersionEnabled, setShortVersionEnabled, shortDuration, setShortDuration, shortRatio, setShortRatio,
-    highlightSegments, chooseHighlightVideos, addHighlightSegment, updateHighlightSegment, removeHighlightSegment, highlightOutputMode, setHighlightOutputMode, highlightRatio, setHighlightRatio, highlightProcessing, handleHighlightExport,
+    highlightSegments, chooseHighlightVideos, addHighlightSegment, updateHighlightSegment, removeHighlightSegment, highlightOutputMode, setHighlightOutputMode, highlightRatio, setHighlightRatio, highlightShortDuration, setHighlightShortDuration, highlightShortRatio, setHighlightShortRatio, highlightProcessingMode, setHighlightProcessingMode, highlightMinTime, setHighlightMinTime, highlightMaxTime, setHighlightMaxTime, highlightRequirePillar, setHighlightRequirePillar, highlightProcessing, handleHighlightExport, joinScenarioScripts, highlightScenarioScripts,
     isProcessing, isPaused, progressMsg, progressPercent,
     singleMode, setSingleMode, hardwareMode, setHardwareMode,
     gpuName, cpuName,

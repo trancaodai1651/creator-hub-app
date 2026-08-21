@@ -8,6 +8,7 @@ use std::time::Instant;
 #[cfg(target_os = "windows")]
 use std::os::windows::process::CommandExt; 
 use std::path::{Path, PathBuf};
+use std::collections::HashMap;
 use std::sync::{Arc, Mutex, Condvar};
 use std::sync::atomic::{AtomicBool, Ordering};
 use rand::seq::SliceRandom;
@@ -166,6 +167,7 @@ pub async fn start_joining(
     }
 
     if video_data.is_empty() { return Err("Hệ thống không quét được thông tin video!".to_string()); }
+    let duration_by_path: HashMap<String, f64> = video_data.iter().cloned().collect();
     let _ = app.emit("join-progress", json!({ "message": "Giai đoạn 2/3: Đang tính toán kịch bản...", "percent": 100 }));
 
     let mut groups: Vec<(Vec<String>, f64)> = Vec::new();
@@ -223,6 +225,30 @@ pub async fn start_joining(
     let total_groups = groups.len();
     let mut output_paths: Vec<String> = Vec::with_capacity(total_groups);
     let has_logo = !logo_path.is_empty() && Path::new(&logo_path).exists();
+
+    let scenario_scripts: Vec<Value> = groups.iter().enumerate().map(|(index, (group, target_duration))| {
+        let output_path = if single_mode {
+            let file_stem = Path::new(&group[0]).file_stem().unwrap_or_default().to_string_lossy().to_string();
+            final_output_dir.join(format!("{}_processed.mp4", file_stem))
+        } else {
+            final_output_dir.join(format!("VIDEO_{}.mp4", index + 1))
+        };
+        let children: Vec<Value> = group.iter().map(|path| json!({
+            "name": Path::new(path).file_name().unwrap_or_default().to_string_lossy(),
+            "path": path,
+            "durationSecs": duration_by_path.get(path).copied().unwrap_or(0.0)
+        })).collect();
+        json!({
+            "outputName": output_path.file_name().unwrap_or_default().to_string_lossy(),
+            "outputPath": output_path.to_string_lossy(),
+            "type": "long",
+            "format": "MP4",
+            "ratio": ratio,
+            "durationSecs": target_duration,
+            "children": children
+        })
+    }).collect();
+    let _ = app.emit("join-scenario", json!({ "scope": "joiner", "scripts": scenario_scripts }));
 
     let mut encoders_pool = vec!["libx264".to_string()]; 
     if use_gpu {
@@ -465,5 +491,5 @@ pub async fn start_joining(
     }
 
     let _ = app.emit("join-progress", json!({ "message": "Hoàn thành! Toàn bộ file đã lưu.", "percent": 100 }));
-    Ok(json!({ "success": true, "paths": output_paths, "message": "Thành công! Toàn bộ yêu cầu xử lý video đã hoàn tất." }))
+    Ok(json!({ "success": true, "paths": output_paths, "scripts": scenario_scripts, "message": "Thành công! Toàn bộ yêu cầu xử lý video đã hoàn tất." }))
 }
