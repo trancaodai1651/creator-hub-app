@@ -13,4 +13,5 @@ out
 
 # Local Tauri target created by an isolated packaging run
 /src-tauri/src-tauri/
+/server/data.json
 /playwright/.auth/

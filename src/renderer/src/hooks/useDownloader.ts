@@ -1,6 +1,8 @@
 /* eslint-disable */
 import { useState, useEffect, useRef } from 'react'
 import { tauriApi } from '../utils/tauriAdapter'
+import { accountService } from '../utils/accountService'
+import type { HubSession } from '../types/auth'
 
 export interface DownloadTask {
   id: string; url: string; title: string; thumbnail: string;
@@ -37,7 +39,7 @@ const getErrorMessage = (error: unknown) => {
   return String(error || 'Unknown download error');
 }
 
-export function useDownloader(t: any, setCustomModal: any) {
+export function useDownloader(t: any, setCustomModal: any, session: HubSession | null = null) {
   const [queue, setQueue] = useState<DownloadTask[]>([])
   const [downloadFolder, setDownloadFolder] = useState('')
   const [fastMode, setFastMode] = useState(true) 
@@ -106,6 +108,7 @@ export function useDownloader(t: any, setCustomModal: any) {
 
   const addVideoToQueue = async (targetUrl: string) => {
     const tempId = crypto.randomUUID();
+    void accountService.track(session, { feature: 'downloader', action: 'queue_add', link: targetUrl })
     setQueue(prev => [...prev, { 
       id: tempId, url: targetUrl, title: 'Đang nạp thông tin video...', 
       thumbnail: '', status: 'fetching', percent: 0, msgKey: 'dl_msg_fetching_preview', 
@@ -203,6 +206,7 @@ export function useDownloader(t: any, setCustomModal: any) {
       if (!nextTask || (nextTask.status !== 'idle' && nextTask.status !== 'error')) continue;
 
       totalTasksRun++;
+      void accountService.track(session, { feature: 'downloader', action: 'download_start', resource: nextTask.title, link: nextTask.url, metadata: { resolution: nextTask.selectedResolution, fastMode: nextTask.isLight } })
       setQueue(prev => prev.map(t => t.id === nextTask.id ? { ...t, status: 'downloading', percent: 0, msgKey: 'dl_msg_starting' } : t));
       
       const startString = nextTask.startMin || nextTask.startSec ? `${nextTask.startMin || '00'}:${nextTask.startSec || '00'}` : '';
@@ -217,15 +221,18 @@ export function useDownloader(t: any, setCustomModal: any) {
         
         if (res?.success) {
           successCount++; 
+          void accountService.track(session, { feature: 'downloader', action: 'download_success', resource: nextTask.title, link: nextTask.url, metadata: { path: res.path, resolution: nextTask.selectedResolution } })
           setQueue(prev => prev.map(t => t.id === nextTask.id ? { ...t, status: 'success', percent: 100, msgKey: 'dlStatusSuccess', localPath: res.path } : t)) 
         } else {
           const errorMessage = res?.message || res?.error || 'Download failed';
           failureMessages.push(`${nextTask.title}: ${errorMessage}`);
+          void accountService.track(session, { feature: 'downloader', action: 'download_error', resource: nextTask.title, link: nextTask.url, metadata: { error: errorMessage } })
           setQueue(prev => prev.map(t => t.id === nextTask.id ? { ...t, status: 'error', msgKey: 'dl_msg_error', errorMessage } : t))
         }
       } catch (err: any) {
         const errorMessage = getErrorMessage(err);
         failureMessages.push(`${nextTask.title}: ${errorMessage}`);
+        void accountService.track(session, { feature: 'downloader', action: 'download_error', resource: nextTask.title, link: nextTask.url, metadata: { error: errorMessage } })
         setQueue(prev => prev.map(t => t.id === nextTask.id ? { ...t, status: 'error', msgKey: 'dl_msg_error', errorMessage } : t))
       }
     }

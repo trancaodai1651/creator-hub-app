@@ -17,6 +17,8 @@ import { WelcomeModal } from './modules/WelcomeModal'
 import { GuideTab } from './modules/GuideTab'
 import { ChatbotTab } from './modules/ChatbotTab'
 import { PublisherTab } from './modules/PublisherTab'
+import { AuthScreen } from './modules/AuthScreen'
+import { AdminTab } from './modules/AdminTab'
 import { useJoiner } from './hooks/useJoiner'
 import { useDownloader } from './hooks/useDownloader'
 import { useConverter } from './hooks/useConverter'
@@ -28,6 +30,8 @@ import { useCleaner } from './hooks/useCleaner'
 import { useChatbot } from './hooks/useChatbot'
 import { usePublisher } from './hooks/usePublisher'
 import { tauriApi } from './utils/tauriAdapter'
+import { accountService, hasPermission } from './utils/accountService'
+import type { HubPermission, HubSession } from './types/auth'
 
 const virtualLogoDataUri = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23ef4444"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>'
 const themePreferenceVersion = 'light-liquid-glass-v3'
@@ -40,6 +44,7 @@ const getInitialThemeSetting = (): 'dark' | 'light' | 'system' => {
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('home')
+  const [session, setSession] = useState<HubSession | null>(() => accountService.getSession())
   const [platform, setPlatform] = useState('win32')
   const [language, setLanguage] = useState<'vi' | 'en'>(() => (localStorage.getItem('hub_lang') as 'vi' | 'en') || 'vi')
   const [themeSetting, setThemeSetting] = useState<'dark' | 'light' | 'system'>(getInitialThemeSetting)
@@ -64,8 +69,8 @@ export default function App() {
     return value
   }
 
-  const joiner = useJoiner(t, setCustomModal)
-  const dl = useDownloader(t, setCustomModal)
+  const joiner = useJoiner(t, setCustomModal, session)
+  const dl = useDownloader(t, setCustomModal, session)
   const conv = useConverter(t, setCustomModal, groqKey)
   const tts = useTts(t, setCustomModal, elevenKey, activeTab)
   const ren = useRenamer(t, setCustomModal)
@@ -78,6 +83,11 @@ export default function App() {
   useEffect(() => {
     tauriApi.invoke('get-platform').then((result: any) => result && setPlatform(result)).catch(() => {})
   }, [])
+
+  useEffect(() => {
+    if (!session || activeTab === 'home') return
+    void accountService.track(session, { feature: activeTab, action: 'open' })
+  }, [activeTab, session?.token])
 
   useEffect(() => {
     localStorage.setItem('hub_lang', language)
@@ -148,8 +158,14 @@ export default function App() {
   }, [language])
 
   const handleTabChange = (tabId: string) => {
-    const tab = SIDEBAR_TABS.find(item => item.id === tabId)
+    const tab = [...SIDEBAR_TABS, { id: 'admin', nameKey: 'adminConsole', descKey: 'adminConsoleDesc', icon: '🛡️', isWip: false }].find(item => item.id === tabId)
     if (tab?.isWip) return
+    const requiredPermission: Partial<Record<string, HubPermission>> = { downloader: 'download', joiner: 'joiner' }
+    if (tabId === 'admin' && session?.role !== 'admin') return
+    if (requiredPermission[tabId] && !hasPermission(session, requiredPermission[tabId]!)) {
+      setCustomModal({ show: true, title: 'ACCESS DENIED', message: 'Access code hiện tại chưa được cấp quyền cho chức năng này.' })
+      return
+    }
     setActiveTab(tabId)
   }
 
@@ -187,9 +203,12 @@ export default function App() {
 
   const colors = isDark ? DARK_THEME : LIGHT_THEME
   const visibleTabs = SIDEBAR_TABS.filter(tab => tab.id !== 'home')
+  const navigationTabs = session?.role === 'admin' ? [...visibleTabs, { id: 'admin', nameKey: 'adminConsole', descKey: 'adminConsoleDesc', icon: '🛡️', isWip: false }] : visibleTabs
+  const requiredPermission: Partial<Record<string, HubPermission>> = { downloader: 'download', joiner: 'joiner' }
+  const canAccessTab = (tabId: string) => !requiredPermission[tabId] || hasPermission(session, requiredPermission[tabId]!)
 
   const renderTab = () => {
-    if (activeTab === 'joiner') return <JoinerTab joiner={joiner} t={t} isDark={isDark} colors={colors} />
+    if (activeTab === 'joiner') return <JoinerTab joiner={joiner} t={t} isDark={isDark} colors={colors} canUseShortVersion={hasPermission(session, 'short_export')} />
     if (activeTab === 'downloader') return <DownloaderTab dl={dl} t={t} colors={colors} />
     if (activeTab === 'converter') return <ConverterTab conv={conv} t={t} colors={colors} isDark={isDark} />
     if (activeTab === 'tts') return <TtsTab tts={tts} t={t} colors={colors} />
@@ -199,10 +218,13 @@ export default function App() {
     if (activeTab === 'cleaner') return <CleanerTab clean={clean} t={t} colors={colors} isDark={isDark} />
     if (activeTab === 'chatbot') return <ChatbotTab chat={chat} t={t} colors={colors} isDark={isDark} />
     if (activeTab === 'publisher') return <PublisherTab publisher={pub} t={t} colors={colors} isDark={isDark} />
+    if (activeTab === 'admin' && session?.role === 'admin') return <AdminTab session={session} isDark={isDark} />
     if (activeTab === 'guide') return <GuideTab t={t} colors={colors} isDark={isDark} />
     if (activeTab === 'settings') return <SettingsTab cfg={{ language, setLanguage, themeSetting, setThemeSetting, fontSize, setFontSize, groqKey, setGroqKey, elevenKey, setElevenKey, youtubeClientId, setYoutubeClientId, youtubeClientSecret, setYoutubeClientSecret }} t={t} colors={colors} isDark={isDark} onCheckUpdate={() => handleCheckUpdate(true)} />
     return null
   }
+
+  if (!session) return <AuthScreen isDark={isDark} onThemeToggle={() => setThemeSetting(value => value === 'dark' ? 'light' : 'dark')} onAuthenticated={setSession} />
 
   return (
     <div className={`creator-app flex h-screen min-h-0 flex-col overflow-hidden transition-colors duration-500 ${colors.c_bgMain}`}>
@@ -224,7 +246,8 @@ export default function App() {
         </div>
 
         <div className="titlebar-actions" style={{ WebkitAppRegion: 'no-drag' } as any}>
-          <span className={`hidden text-[10px] font-bold uppercase tracking-widest md:inline ${colors.c_textSub}`}>Local workspace</span>
+          <span className={`hidden max-w-[180px] truncate text-[10px] font-bold uppercase tracking-widest md:inline ${colors.c_textSub}`}>{session.displayName} · {session.role === 'admin' ? 'ADMIN' : 'USER'}</span>
+          <button onClick={() => { accountService.clearSession(); setSession(null); setActiveTab('home') }} className="glass-button glass-hover rounded-xl border px-3 py-2 text-xs font-bold">Thoát</button>
           <button onClick={() => handleTabChange('settings')} className="glass-button glass-hover flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-bold sm:px-4 sm:text-sm"><span>⚙</span><span className="hidden sm:inline">{t('settings')}</span></button>
         </div>
       </header>
@@ -233,10 +256,11 @@ export default function App() {
         <aside className={`glass-panel hidden w-[250px] shrink-0 flex-col rounded-2xl border p-3 md:flex xl:w-[270px] ${colors.c_borderT}`}>
           <button onClick={() => handleTabChange('home')} data-glass-hover data-glass-active={activeTab === 'home'} className={`glass-nav-item glass-hover mb-2 flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-bold ${activeTab === 'home' ? 'text-white' : isDark ? 'text-zinc-300' : 'text-zinc-600'}`}><span className="text-lg">⌂</span><span>{t('dashboard')}</span></button>
           <nav className="custom-scrollbar min-h-0 flex-1 space-y-1 overflow-y-auto">
-            {visibleTabs.map(tab => {
+            {navigationTabs.map(tab => {
               const isActive = activeTab === tab.id
-              const isLocked = Boolean(tab.isWip)
-              return <button key={tab.id} disabled={isLocked} onClick={() => handleTabChange(tab.id)} data-glass-hover data-glass-active={isActive} className={`glass-nav-item glass-hover flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-bold ${isLocked ? 'cursor-not-allowed opacity-45' : isActive ? 'text-white' : isDark ? 'text-zinc-300' : 'text-zinc-600'}`}><span className="w-6 shrink-0 text-center text-lg">{tab.icon}</span><span className="min-w-0 flex-1 truncate">{t(tab.nameKey)}</span>{isLocked && <span className="text-[8px] font-black uppercase text-amber-500">DEV</span>}</button>
+              const isPermissionLocked = !canAccessTab(tab.id)
+              const isLocked = Boolean(tab.isWip) || isPermissionLocked
+              return <button key={tab.id} disabled={isLocked} onClick={() => handleTabChange(tab.id)} data-glass-hover data-glass-active={isActive} className={`glass-nav-item glass-hover flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-bold ${isLocked ? 'cursor-not-allowed opacity-45' : isActive ? 'text-white' : isDark ? 'text-zinc-300' : 'text-zinc-600'}`}><span className="w-6 shrink-0 text-center text-lg">{tab.icon}</span><span className="min-w-0 flex-1 truncate">{t(tab.nameKey)}</span>{isLocked && <span className="text-[8px] font-black uppercase text-amber-500">{isPermissionLocked ? 'LOCK' : 'DEV'}</span>}</button>
             })}
           </nav>
         </aside>
@@ -245,7 +269,7 @@ export default function App() {
           <div className="mb-3 flex items-center gap-2 md:hidden">
             <select aria-label="Choose workspace tool" value={activeTab} onChange={event => handleTabChange(event.target.value)} data-glass-hover className={`glass-input glass-hover min-w-0 flex-1 rounded-xl border px-3 py-2.5 text-sm font-bold outline-none ${colors.c_borderT}`}>
               <option value="home">{t('dashboard')}</option>
-              {visibleTabs.map(tab => <option key={tab.id} value={tab.id} disabled={tab.isWip}>{t(tab.nameKey)}{tab.isWip ? ' - DEV' : ''}</option>)}
+              {navigationTabs.map(tab => <option key={tab.id} value={tab.id} disabled={Boolean(tab.isWip) || !canAccessTab(tab.id)}>{t(tab.nameKey)}{tab.isWip ? ' - DEV' : !canAccessTab(tab.id) ? ' - LOCK' : ''}</option>)}
             </select>
           </div>
 
@@ -257,10 +281,11 @@ export default function App() {
                 <p className={`mt-2 max-w-2xl text-sm leading-relaxed ${colors.c_textSub}`}>Choose a tool to start working with your media files.</p>
               </section>
               <div className="grid grid-cols-[repeat(auto-fit,minmax(230px,1fr))] gap-3 sm:gap-4">
-                {visibleTabs.map((tab: any, index: number) => {
-                  const isLocked = Boolean(tab.isWip)
+                {navigationTabs.map((tab: any, index: number) => {
+                  const isPermissionLocked = !canAccessTab(tab.id)
+                  const isLocked = Boolean(tab.isWip) || isPermissionLocked
                   return <button key={tab.id} disabled={isLocked} onClick={() => handleTabChange(tab.id)} data-glass-hover className={`glass-card glass-hover group relative flex min-h-[155px] flex-col justify-between overflow-hidden rounded-2xl border p-5 text-left opacity-0 animate-fade-in-up duration-300 ${isLocked ? 'cursor-not-allowed opacity-45' : `cursor-pointer ${isDark ? 'text-white' : 'text-zinc-800'}`}`} style={{ animationDelay: `${index * 35}ms` }}>
-                    <div className="flex items-start justify-between"><span className={`flex h-11 w-11 items-center justify-center rounded-xl text-2xl ${isDark ? 'bg-zinc-800/70' : 'bg-zinc-100'}`}>{tab.icon}</span>{isLocked && <span className="rounded-full bg-amber-500/10 px-2 py-1 text-[9px] font-black uppercase tracking-widest text-amber-500">DEV</span>}</div>
+                    <div className="flex items-start justify-between"><span className={`flex h-11 w-11 items-center justify-center rounded-xl text-2xl ${isDark ? 'bg-zinc-800/70' : 'bg-zinc-100'}`}>{tab.icon}</span>{isLocked && <span className="rounded-full bg-amber-500/10 px-2 py-1 text-[9px] font-black uppercase tracking-widest text-amber-500">{isPermissionLocked ? 'LOCK' : 'DEV'}</span>}</div>
                     <div><h2 className="text-base font-black text-red-500">{t(tab.nameKey)}</h2><p className={`mt-1 text-xs leading-relaxed ${colors.c_textSub}`}>{t(tab.descKey)}</p></div>
                   </button>
                 })}

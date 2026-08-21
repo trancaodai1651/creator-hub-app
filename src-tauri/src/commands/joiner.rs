@@ -121,7 +121,7 @@ pub async fn start_joining(
     use_gpu: bool,
     video_encoder: Option<String>,
     single_mode: bool,
-    hardware_mode: Option<String>, 
+    hardware_mode: Option<String>,
 ) -> Result<Value, String> {
     state.is_paused.store(false, Ordering::Relaxed);
     state.is_cancelled.store(false, Ordering::Relaxed);
@@ -221,6 +221,7 @@ pub async fn start_joining(
     }
 
     let total_groups = groups.len();
+    let mut output_paths: Vec<String> = Vec::with_capacity(total_groups);
     let has_logo = !logo_path.is_empty() && Path::new(&logo_path).exists();
 
     let mut encoders_pool = vec!["libx264".to_string()]; 
@@ -436,6 +437,7 @@ pub async fn start_joining(
                 Ok(_) => {
                     render_success = true;
                     if active_encoder.is_empty() { active_encoder = encoder_id.clone(); }
+                    output_paths.push(output_path.to_string_lossy().to_string());
                     break;
                 },
                 Err(err) => {
@@ -453,6 +455,7 @@ pub async fn start_joining(
                 let _ = app.emit("join-progress", json!({ "message": format!("Lỗi GPU: {} -> Lùi về CPU...", last_error_msg), "percent": 0 }));
                 run_ffmpeg_engine("libx264", &msg_base).map_err(|e| format!("Lỗi sập nguồn CPU: {}", e))?;
                 active_encoder = "libx264".to_string();
+                output_paths.push(output_path.to_string_lossy().to_string());
             } else {
                 return Err(format!("Lỗi kết xuất FFmpeg: {}", last_error_msg));
             }
@@ -460,5 +463,5 @@ pub async fn start_joining(
     }
 
     let _ = app.emit("join-progress", json!({ "message": "Hoàn thành! Toàn bộ file đã lưu.", "percent": 100 }));
-    Ok(json!({ "success": true, "message": "Thành công! Toàn bộ yêu cầu xử lý video đã hoàn tất." }))
+    Ok(json!({ "success": true, "paths": output_paths, "message": "Thành công! Toàn bộ yêu cầu xử lý video đã hoàn tất." }))
 }

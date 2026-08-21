@@ -12,6 +12,8 @@ export const vi: Record<string, string> = {
   uninstaller: "Gỡ ứng dụng sạch", 
   cleaner: "Dọn rác hệ thống",
   settings: "Cài đặt",
+  adminConsole: "Quản trị",
+  adminConsoleDesc: "Quản lý access code và activity người dùng.",
   welcome: "Chào mừng trở lại!",
   createdBy: "Phát triển bởi TCD", 
   engineeredBy: "PHÁT TRIỂN BỞI",

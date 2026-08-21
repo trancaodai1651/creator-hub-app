@@ -12,6 +12,8 @@ export const en: Record<string, string> = {
   uninstaller: "Uninstaller",
   cleaner: "System Cleaner",
   settings: "Settings",
+  adminConsole: "Admin Console",
+  adminConsoleDesc: "Manage access codes and user activity.",
   welcome: "Welcome back!",
   createdBy: "Created by TCD",
   engineeredBy: "ENGINEERED BY",

@@ -6,6 +6,7 @@ interface JoinerTabProps {
   joiner: any
   t: (key: string, data?: any) => string
   isDark: boolean
+  canUseShortVersion?: boolean
   colors?: any // Dự phòng cho TypeScript khỏi báo lỗi nếu sếp lỡ truyền
 }
 
@@ -34,7 +35,7 @@ const checkIsDiscreteGPU = (name: string): boolean => {
   return discreteKeywords.some(kw => lower.includes(kw)); 
 }
 
-export const JoinerTab: React.FC<JoinerTabProps> = ({ joiner, t, isDark }) => {
+export const JoinerTab: React.FC<JoinerTabProps> = ({ joiner, t, isDark, canUseShortVersion = true }) => {
   const [formattedGpu, setFormattedGpu] = useState('ĐANG TẢI DỮ LIỆU...');
   const [formattedCpu, setFormattedCpu] = useState('ĐANG TẢI DỮ LIỆU...');
 
@@ -163,7 +164,7 @@ export const JoinerTab: React.FC<JoinerTabProps> = ({ joiner, t, isDark }) => {
       )}
       
       {/* BENTO GRID CONTROLS */}
-      <div className="shrink-0 flex items-stretch gap-4 w-full h-[220px]">
+      <div className="shrink-0 flex items-stretch gap-4 w-full min-h-[250px] h-auto">
         
         {/* THẺ 1: CHIẾN THUẬT & PHẦN CỨNG */}
         <div className={`flex-1 flex flex-col justify-between p-5 rounded-[24px] border shadow-sm ${isDark ? 'bg-[#16161a] border-zinc-800' : 'bg-white border-zinc-200'}`}>
@@ -195,6 +196,18 @@ export const JoinerTab: React.FC<JoinerTabProps> = ({ joiner, t, isDark }) => {
                 </div>
               </label>
             </div>
+          </div>
+
+          <div className={`rounded-xl border p-2.5 ${isDark ? 'border-white/10 bg-white/5' : 'border-zinc-200 bg-zinc-50/80'} ${!canUseShortVersion ? 'opacity-50' : ''}`}>
+            <label className="flex items-center justify-between gap-3 cursor-pointer">
+              <span className="min-w-0"><span className="block text-xs font-semibold">Xuất thêm bản ngắn</span><span className="mt-0.5 block truncate text-[10px] opacity-50">Tạo file phụ với thời lượng và tỉ lệ riêng</span></span>
+              <input type="checkbox" checked={joiner.shortVersionEnabled} disabled={!canUseShortVersion} onChange={event => joiner.setShortVersionEnabled(event.target.checked)} className="h-4 w-4 accent-red-500" />
+            </label>
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              <label className="text-[10px] font-medium opacity-60">Phút<input type="number" min="0.1" step="0.1" value={joiner.shortDuration} disabled={!canUseShortVersion || !joiner.shortVersionEnabled} onChange={event => joiner.setShortDuration(Number(event.target.value))} className="mt-1 w-full rounded-lg border border-current/10 bg-transparent px-2 py-1.5 text-xs outline-none" /></label>
+              <label className="text-[10px] font-medium opacity-60">Tỉ lệ<select value={joiner.shortRatio} disabled={!canUseShortVersion || !joiner.shortVersionEnabled} onChange={event => joiner.setShortRatio(event.target.value)} className="mt-1 w-full rounded-lg border border-current/10 bg-transparent px-2 py-1.5 text-xs outline-none"><option value="9:16">9:16 dọc</option><option value="1:1">1:1 vuông</option><option value="16:9">16:9 ngang</option></select></label>
+            </div>
+            {!canUseShortVersion && <p className="mt-1 text-[9px] text-amber-500">Access code chưa có quyền bản ngắn.</p>}
           </div>
 
           <div className={`flex items-center justify-between gap-4 border-t pt-4 ${isDark ? 'border-zinc-800' : 'border-zinc-100'}`}>

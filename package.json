@@ -12,6 +12,7 @@
     "tauri": "tauri",
     "dev:tauri": "tauri dev",
     "build:tauri": "tauri build",
+    "server": "node server/index.mjs",
     "frontend:dev": "set TAURI_DEV=true&& electron-vite dev --filter renderer"
   },
   "dependencies": {

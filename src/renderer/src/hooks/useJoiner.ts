@@ -1,6 +1,8 @@
 /* eslint-disable */
 import { useState, useEffect } from 'react'
 import { tauriApi } from '../utils/tauriAdapter'
+import { accountService } from '../utils/accountService'
+import type { HubSession } from '../types/auth'
 
 // 🚀 HÀM RÚT GỌN TÊN PHẦN CỨNG THÔNG MINH
 const formatHardwareName = (name: string) => {
@@ -22,7 +24,7 @@ const formatHardwareName = (name: string) => {
   return cleanName.replace(/\s+/g, ' ').trim();
 }
 
-export function useJoiner(t: (key: string) => string, setCustomModal: (modal: any) => void) {
+export function useJoiner(t: (key: string) => string, setCustomModal: (modal: any) => void, session: HubSession | null = null) {
   const [videoList, setVideoList] = useState<string[]>([]) 
   const [minTime, setMinTime] = useState<number>(60)
   const [maxTime, setMaxTime] = useState<number>(70)
@@ -34,6 +36,9 @@ export function useJoiner(t: (key: string) => string, setCustomModal: (modal: an
   
   const [logoSize, setLogoSize] = useState<number>(150) 
   const [joinRatio, setJoinRatio] = useState<string>('original')
+  const [shortVersionEnabled, setShortVersionEnabled] = useState<boolean>(false)
+  const [shortDuration, setShortDuration] = useState<number>(1)
+  const [shortRatio, setShortRatio] = useState<string>('9:16')
 
   const [singleMode, setSingleMode] = useState<boolean>(false)
   const [hardwareMode, setHardwareMode] = useState<string>('max')
@@ -73,6 +78,12 @@ export function useJoiner(t: (key: string) => string, setCustomModal: (modal: an
 
   const handleStartProcess = async () => {
     if (videoList.length === 0) { alert(t('alertChooseFolder')); return }
+    void accountService.track(session, {
+      feature: 'joiner',
+      action: 'export_start',
+      resource: `${videoList.length} video files`,
+      metadata: { minMins: minTime, maxMins: maxTime, ratio: joinRatio, singleMode, shortVersion: shortVersionEnabled, shortDuration, shortRatio }
+    })
     setIsProcessing(true); setIsPaused(false); setProgressPercent(0); setProgressMsg(t('processing'))
     
     unlistenProgress = await tauriApi.on('join-progress', (data: any) => {
@@ -83,11 +94,29 @@ export function useJoiner(t: (key: string) => string, setCustomModal: (modal: an
 
     try {
       const response: any = await tauriApi.invoke('start-joining', { 
-        videoPaths: videoList, minMins: Number(minTime), maxMins: Number(maxTime), 
+        videoPaths: videoList, minMins: Number(minTime), maxMins: Number(maxTime),
         requirePillar, outputDir: outputFolder, logoPath, logoPosition, 
         logoSize, ratio: joinRatio, useGpu, singleMode, hardwareMode
       })
-      setCustomModal({ show: true, title: t('joinTitle'), message: response.message })
+      let message = response?.message || 'Đã hoàn thành phiên bản gốc.'
+      if (response?.success && shortVersionEnabled) {
+        try {
+          const joinedVideoPaths = Array.isArray(response?.paths) && response.paths.length > 0 ? response.paths : videoList
+          const shortResponse: any = await tauriApi.invoke('export-short-version', {
+            videoPaths: joinedVideoPaths,
+            outputDir: outputFolder,
+            shortDurationMins: Number(shortDuration),
+            shortRatio,
+            logoPath,
+            logoPosition,
+            logoSize
+          })
+          message = `${message}\n\n${shortResponse?.message || 'Đã xuất thêm phiên bản ngắn.'}`
+        } catch (shortError: any) {
+          message = `${message}\n\nKhông thể xuất bản ngắn: ${String(shortError)}`
+        }
+      }
+      setCustomModal({ show: true, title: t('joinTitle'), message })
     } catch (error: any) { 
       setCustomModal({ show: true, title: "ERROR", message: String(error) }) 
     } finally {
@@ -124,7 +153,8 @@ export function useJoiner(t: (key: string) => string, setCustomModal: (modal: an
     videoList, setVideoList, minTime, setMinTime, maxTime, setMaxTime,
     requirePillar, setRequirePillar, useGpu, setUseGpu, outputFolder, setOutputFolder,
     logoPath, setLogoPath, logoPosition, setLogoPosition, logoSize, setLogoSize,
-    joinRatio, setJoinRatio, isProcessing, isPaused, progressMsg, progressPercent,
+    joinRatio, setJoinRatio, shortVersionEnabled, setShortVersionEnabled, shortDuration, setShortDuration, shortRatio, setShortRatio,
+    isProcessing, isPaused, progressMsg, progressPercent,
     singleMode, setSingleMode, hardwareMode, setHardwareMode,
     gpuName, cpuName,
     scanDirectory, handleStartProcess, handlePauseToggle, handleCancel, handleDrop
