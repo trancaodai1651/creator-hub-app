@@ -43,6 +43,7 @@
       "resources/ffmpeg.exe",
       "resources/ffprobe.exe",
       "resources/deno.exe",
+      "resources/voices/*",
       "scripts/omnivoice_adapter.py"
     ],
     "android": {

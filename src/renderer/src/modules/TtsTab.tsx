@@ -122,9 +122,13 @@ export const TtsTab: React.FC<{ tts: any, t: any, colors: any }> = ({ tts, color
               <span className="rounded-full bg-red-500/10 px-2.5 py-1 text-xs text-red-500">{tts.voiceLibrary.length} giọng</span>
             </div>
             <select value={tts.selectedVoiceId} onChange={event => tts.setSelectedVoiceId(event.target.value)} className={fieldClass}>
-              {tts.voiceLibrary.map((voice: any) => <option key={voice.id} value={voice.id}>{voice.name}{voice.mode === 'clone' ? ' · Đã lưu' : ''}</option>)}
+              {tts.voiceLibrary.map((voice: any) => <option key={voice.id} value={voice.id}>{voice.name}{voice.source === 'bundled' ? ' · Có sẵn' : voice.mode === 'clone' ? ' · Đã lưu' : ''}</option>)}
               <option value="design">Thiết kế giọng theo mô tả</option>
             </select>
+            <div className={`mt-2 flex items-center justify-between gap-2 text-[11px] ${colors.c_textSub}`}>
+              <span>{tts.builtInVoiceCount > 0 ? `${tts.builtInVoiceCount} giọng có sẵn từ thư mục voices` : 'Đặt tệp prompt .pt vào thư mục voices để dùng ngay'}</span>
+              <button type="button" onClick={tts.refreshBundledVoices} className="shrink-0 font-semibold text-red-500 hover:underline">Nạp lại</button>
+            </div>
             <div className="mt-3 grid grid-cols-3 gap-2">
               {([['auto', 'Tự động'], ['cpu', 'CPU'], ['gpu', 'GPU']] as const).map(([id, label]) => (
                 <button type="button" key={id} onClick={() => tts.setDevice(id)} className={`rounded-xl border px-2 py-2 text-xs font-semibold transition ${tts.device === id ? 'border-red-400 bg-red-500 text-white' : 'border-black/10 opacity-70 hover:opacity-100 dark:border-white/10'}`}>{label}</button>

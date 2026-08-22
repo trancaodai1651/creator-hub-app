@@ -12,6 +12,12 @@ const getScriptPath = () => {
   return path.join(app.getAppPath(), 'src-tauri', 'scripts', 'omnivoice_adapter.py')
 }
 
+const getBundledVoiceDirectory = () => {
+  const packaged = path.join(process.resourcesPath, 'voices')
+  if (fs.existsSync(packaged)) return packaged
+  return path.join(app.getAppPath(), 'src-tauri', 'resources', 'voices')
+}
+
 const runAdapter = (action: string, args: string[] = []) => {
   const script = getScriptPath()
   const command = process.platform === 'win32' ? 'py' : 'python3'
@@ -28,6 +34,24 @@ const runAdapter = (action: string, args: string[] = []) => {
 
 export function registerTtsHandlers() {
   ipcMain.handle('omnivoice-status', () => runAdapter('status'))
+
+  ipcMain.handle('list-bundled-omnivoice-voices', () => {
+    const directory = getBundledVoiceDirectory()
+    if (!fs.existsSync(directory)) return []
+    return fs.readdirSync(directory, { withFileTypes: true })
+      .filter(entry => entry.isFile() && path.extname(entry.name).toLowerCase() === '.pt')
+      .map(entry => {
+        const stem = path.basename(entry.name, path.extname(entry.name))
+        return {
+          id: `bundled-${stem}`,
+          name: stem.replace(/[_-]+/g, ' '),
+          mode: 'clone',
+          source: 'bundled',
+          promptPath: path.join(directory, entry.name)
+        }
+      })
+      .sort((left, right) => left.name.localeCompare(right.name))
+  })
 
   ipcMain.handle('install-omnivoice-runtime', () => {
     const command = process.platform === 'win32' ? 'py' : 'python3'

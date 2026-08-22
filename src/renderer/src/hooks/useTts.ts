@@ -18,6 +18,7 @@ export type OmniVoiceRecord = {
   mode: 'auto' | 'clone' | 'design'
   promptPath?: string
   createdAt?: string
+  source?: 'bundled' | 'project'
 }
 
 export type OmniVoiceStatus = {
@@ -39,7 +40,7 @@ const readVoices = (): OmniVoiceRecord[] => {
   try {
     const saved = JSON.parse(localStorage.getItem(VOICE_LIBRARY_KEY) || '[]')
     const records = Array.isArray(saved) ? saved.filter(item => item?.id && item?.name && item?.mode) : []
-    return [DEFAULT_VOICE, ...records.filter(item => item.id !== DEFAULT_VOICE.id && item.id !== 'design')]
+    return [DEFAULT_VOICE, ...records.filter(item => item.id !== DEFAULT_VOICE.id && item.id !== 'design').map(item => ({ ...item, source: item.source || 'project' }))]
   } catch {
     return [DEFAULT_VOICE]
   }
@@ -81,6 +82,7 @@ export function useTts(t: any, setCustomModal: any, activeTab: string, geminiKey
   const [scriptText, setScriptText] = useState('')
   const [approvedScript, setApprovedScript] = useState('')
   const [voiceLibrary, setVoiceLibrary] = useState<OmniVoiceRecord[]>(readVoices)
+  const [builtInVoiceCount, setBuiltInVoiceCount] = useState(0)
   const [selectedVoiceId, setSelectedVoiceId] = useState(DEFAULT_VOICE.id)
   const [referenceAudio, setReferenceAudio] = useState('')
   const [referenceText, setReferenceText] = useState('')
@@ -116,12 +118,37 @@ export function useTts(t: any, setCustomModal: any, activeTab: string, geminiKey
     }
   }
 
+  const refreshBundledVoices = async () => {
+    try {
+      const result: any = await tauriApi.invoke('list-bundled-omnivoice-voices')
+      if (!Array.isArray(result)) return
+      const bundled = result
+        .filter(item => item?.id && item?.name && item?.promptPath)
+        .map(item => ({ ...item, source: 'bundled' as const })) as OmniVoiceRecord[]
+      setBuiltInVoiceCount(bundled.length)
+      setVoiceLibrary(current => {
+        const projectVoices = current.filter(voice => voice.source !== 'bundled' && voice.id !== DEFAULT_VOICE.id)
+        const seen = new Set<string>()
+        return [DEFAULT_VOICE, ...bundled, ...projectVoices].filter(voice => {
+          if (seen.has(voice.id)) return false
+          seen.add(voice.id)
+          return true
+        })
+      })
+    } catch {
+      setBuiltInVoiceCount(0)
+    }
+  }
+
   useEffect(() => {
-    if (activeTab === 'tts') void refreshStatus()
+    if (activeTab === 'tts') {
+      void refreshStatus()
+      void refreshBundledVoices()
+    }
   }, [activeTab])
 
   useEffect(() => {
-    localStorage.setItem(VOICE_LIBRARY_KEY, JSON.stringify(voiceLibrary.filter(voice => voice.id !== DEFAULT_VOICE.id)))
+    localStorage.setItem(VOICE_LIBRARY_KEY, JSON.stringify(voiceLibrary.filter(voice => voice.id !== DEFAULT_VOICE.id && voice.source !== 'bundled')))
   }, [voiceLibrary])
 
   useEffect(() => {
@@ -199,7 +226,7 @@ export function useTts(t: any, setCustomModal: any, activeTab: string, geminiKey
         device,
         modelId: MODEL_ID
       })
-      const record: OmniVoiceRecord = { id: result.voiceId, name: voiceName.trim(), mode: 'clone', promptPath: result.promptPath, createdAt: new Date().toISOString() }
+      const record: OmniVoiceRecord = { id: result.voiceId, name: voiceName.trim(), mode: 'clone', source: 'project', promptPath: result.promptPath, createdAt: new Date().toISOString() }
       setVoiceLibrary(current => [...current.filter(voice => voice.id !== record.id), record])
       setSelectedVoiceId(record.id)
       if (result.projectDir) setProjectDir(result.projectDir)
@@ -242,7 +269,7 @@ export function useTts(t: any, setCustomModal: any, activeTab: string, geminiKey
     productName, setProductName, benefits, setBenefits, proof, setProof, offer, setOffer, cta, setCta,
     scriptText, setScriptText: (value: string) => { setScriptText(value); if (approvedScript !== value.trim()) setApprovedScript('') },
     approvedScript, isApproved, handleGenerateScript, handleGenerateGeminiScript, handleApproveScript, handleUsePastedScript,
-    voiceLibrary, selectedVoiceId, setSelectedVoiceId, selectedVoice, referenceAudio, setReferenceAudio, referenceText, setReferenceText,
+    voiceLibrary, builtInVoiceCount, refreshBundledVoices, selectedVoiceId, setSelectedVoiceId, selectedVoice, referenceAudio, setReferenceAudio, referenceText, setReferenceText,
     voiceName, setVoiceName, voiceInstruction, setVoiceInstruction, projectDir, setProjectDir, outputDir, setOutputDir,
     device, setDevice, status, refreshStatus, isTtsProcessing, isCloning, isInstalling, handleInstallRuntime, handleCloneVoice,
     detectedLanguage, estimatedDuration, generatedPath, handleGenerateTTS, t

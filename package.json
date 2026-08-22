@@ -82,6 +82,10 @@
       {
         "from": "src-tauri/scripts/omnivoice_adapter.py",
         "to": "scripts/omnivoice_adapter.py"
+      },
+      {
+        "from": "src-tauri/resources/voices",
+        "to": "voices"
       }
     ],
     "directories": {

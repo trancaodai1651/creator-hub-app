@@ -60,6 +60,7 @@ fn main() {
             commands::system::get_cpu_name,
             
             commands::tts::omnivoice_status,
+            commands::tts::list_bundled_omnivoice_voices,
             commands::tts::install_omnivoice_runtime,
             commands::tts::clone_omnivoice_voice,
             commands::tts::generate_omnivoice_voice,

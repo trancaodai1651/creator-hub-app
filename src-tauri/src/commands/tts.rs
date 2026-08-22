@@ -6,6 +6,7 @@ use std::process::Command;
 use tauri::Manager;
 
 const SCRIPT_RELATIVE_PATH: &str = "scripts/omnivoice_adapter.py";
+const VOICES_RELATIVE_PATH: &str = "voices";
 const OMNIVOICE_REPOSITORY: &str = "git+https://github.com/k2-fsa/OmniVoice.git";
 
 fn resolve_project_dir(app: &tauri::AppHandle, requested: Option<String>) -> Result<PathBuf, String> {
@@ -40,6 +41,26 @@ fn adapter_script(app: &tauri::AppHandle) -> Result<PathBuf, String> {
     }
 
     Err(format!("Không tìm thấy bộ điều hợp OmniVoice tại {}", bundled.display()))
+}
+
+fn bundled_voice_dir(app: &tauri::AppHandle) -> Result<PathBuf, String> {
+    let bundled = app
+        .path()
+        .resource_dir()
+        .map_err(|error| error.to_string())?
+        .join(VOICES_RELATIVE_PATH);
+    if bundled.exists() {
+        return Ok(bundled);
+    }
+
+    let development = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("resources")
+        .join(VOICES_RELATIVE_PATH);
+    if development.exists() {
+        return Ok(development);
+    }
+
+    Err(format!("Khong tim thay thu muc voice co san tai {}", bundled.display()))
 }
 
 fn python_command(script: &Path, args: &[OsString]) -> Command {
@@ -105,6 +126,47 @@ fn clean_name(value: &str) -> String {
 #[tauri::command]
 pub async fn omnivoice_status(app: tauri::AppHandle) -> Result<Value, String> {
     run_adapter(&app, "status", &[])
+}
+
+#[tauri::command]
+pub async fn list_bundled_omnivoice_voices(app: tauri::AppHandle) -> Result<Value, String> {
+    let directory = bundled_voice_dir(&app)?;
+    let mut voices = Vec::new();
+
+    for entry in fs::read_dir(&directory).map_err(|error| error.to_string())? {
+        let entry = entry.map_err(|error| error.to_string())?;
+        let path = entry.path();
+        let is_prompt = path
+            .extension()
+            .and_then(|extension| extension.to_str())
+            .map(|extension| extension.eq_ignore_ascii_case("pt"))
+            .unwrap_or(false);
+        if !is_prompt || !path.is_file() {
+            continue;
+        }
+
+        let stem = path
+            .file_stem()
+            .and_then(|value| value.to_str())
+            .unwrap_or("voice")
+            .to_string();
+        voices.push(json!({
+            "id": format!("bundled-{stem}"),
+            "name": stem.replace('_', " ").replace('-', " "),
+            "mode": "clone",
+            "source": "bundled",
+            "promptPath": path.to_string_lossy().to_string()
+        }));
+    }
+
+    voices.sort_by(|left, right| {
+        left.get("name")
+            .and_then(Value::as_str)
+            .unwrap_or_default()
+            .to_lowercase()
+            .cmp(&right.get("name").and_then(Value::as_str).unwrap_or_default().to_lowercase())
+    });
+    Ok(Value::Array(voices))
 }
 
 #[tauri::command]
